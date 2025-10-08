@@ -11,20 +11,31 @@
     <style>
         .view { display: none; }
         .active-view { display: block; }
+        .nav-link.active {
+            background-color: #374151; /* bg-gray-700 */
+            color: white;
+        }
         /* Modal Animation Styles */
         .modal-container {
-            transition: opacity 0.3s ease-in-out;
+            transition: opacity 0.2s ease-in-out;
         }
         .modal-container.modal-hidden {
             opacity: 0;
             pointer-events: none;
         }
         .modal-box {
-            transition: transform 0.3s ease-in-out;
+            transition: transform 0.2s ease-in-out;
         }
         .modal-container.modal-hidden .modal-box {
-            transform: scale(0.95);
+            transform: scale(0.95) translateY(1rem);
         }
+        @media print {
+            body * { visibility: hidden; }
+            #receipt-print-area, #receipt-print-area * { visibility: visible; }
+            #receipt-print-area { position: absolute; left: 0; top: 0; width: 100%; font-family: 'Courier New', Courier, monospace; font-size: 10px; }
+            @page { size: 80mm auto; margin: 2mm; }
+        }
+        #reader { width: 100%; border: 2px solid #e5e7eb; border-radius: 0.5rem; }
     </style>
 </head>
 <body class="bg-slate-100">
@@ -52,14 +63,12 @@
     <div id="debug-console-container"></div>
 
 <script type="module">
-    // --- SUPABASE & APP CONFIG ---
     const SUPABASE_URL = "https://rthuzwhtwuhbzdokwgme.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0aHV6d2h0d3VoYnpkb2t3Z21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyNDQyODYsImV4cCI6MjA3MzgyMDI4Nn0.zs17CD9KBZmuVjhQDs0EP1ut9fy-TkalWy5DE63SHgk";
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    let currentUser = null, inventoryCache = [], currentBill = [], salesHistoryCache = [], selectedProductForBatch = null, cameraScanner = null;
+    let currentUser = null, inventoryCache = [], currentBill = [], salesHistoryCache = [], selectedProductForBatch = null, cameraScanner = null, realtimeChannel = null;
 
-    // --- DOM ELEMENTS ---
     const DOMElements = {
         authScreen: document.getElementById('auth-screen'), appScreen: document.getElementById('app-screen'), authForm: document.getElementById('auth-form'),
         emailInput: document.getElementById('email'), passwordInput: document.getElementById('password'), authError: document.getElementById('auth-error'),
@@ -90,6 +99,7 @@
         confirmPrintBtn: document.getElementById('confirm-print-btn'), historyTableBody: document.getElementById('history-table-body'), historySearchInput: document.getElementById('history-search'),
         historyDetailModal: document.getElementById('history-detail-modal'), historyDetailCustomer: document.getElementById('history-detail-customer'),
         historyDetailDate: document.getElementById('history-detail-date'), historyDetailItems: document.getElementById('history-detail-items'),
+        historyDetailTotalProfit: document.getElementById('history-detail-total-profit'),
         closeHistoryDetailModalBtn: document.getElementById('close-history-detail-modal'),
         aiModal: document.getElementById('ai-modal'), aiModalTitle: document.getElementById('ai-modal-title'), aiModalContent: document.getElementById('ai-modal-content'),
         closeAiModalBtn: document.getElementById('close-ai-modal'),
@@ -103,89 +113,61 @@
         fastMovingTable: document.getElementById('fast-moving-table'), slowMovingTable: document.getElementById('slow-moving-table'),
     };
     
-    // --- HELPER FUNCTIONS FOR MODALS ---
     const allModals = document.querySelectorAll('.modal-container');
-    function showModal(modalElement) {
-        modalElement.classList.remove('modal-hidden');
-    }
-    function hideModal(modalElement) {
-        modalElement.classList.add('modal-hidden');
-    }
-    allModals.forEach(modal => {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                hideModal(modal);
-            }
-        });
-    });
+    function showModal(modalElement) { modalElement.classList.remove('modal-hidden'); }
+    function hideModal(modalElement) { modalElement.classList.add('modal-hidden'); }
+    allModals.forEach(modal => { modal.addEventListener('click', (e) => { if (e.target === modal) { hideModal(modal); } }); });
 
-    // --- AUTH & APP STARTUP ---
     document.addEventListener('DOMContentLoaded', checkUser);
     async function checkUser() { const { data: { session } } = await db.auth.getSession(); if (session) { currentUser = session.user; showAppScreen(); } else { showAuthScreen(); } }
     db.auth.onAuthStateChange((event, session) => { if (event === 'SIGNED_IN') { currentUser = session.user; showAppScreen(); } else if (event === 'SIGNED_OUT') { currentUser = null; showAuthScreen(); } });
     async function handleSignIn() { const { data, error } = await db.auth.signInWithPassword({ email: DOMElements.emailInput.value, password: DOMElements.passwordInput.value }); if (error) { DOMElements.authError.textContent = error.message; DOMElements.authError.classList.remove('hidden'); } else if (data.user) { DOMElements.authError.classList.add('hidden'); currentUser = data.user; showAppScreen(); } }
     async function handleSignUp() { const { error } = await db.auth.signUp({ email: DOMElements.emailInput.value, password: DOMElements.passwordInput.value }); if (error) { DOMElements.authError.textContent = error.message; DOMElements.authError.classList.remove('hidden'); } else { alert('Sign up successful! Please check your email to confirm.'); } }
     async function handleGoogleSignIn() { await db.auth.signInWithOAuth({ provider: 'google' }); }
-    async function handleSignOut() { await db.auth.signOut(); }
-    function showAppScreen() { DOMElements.authScreen.classList.add('hidden'); DOMElements.appScreen.classList.remove('hidden'); const displayName = currentUser.email.split('@')[0]; DOMElements.welcomeMessage.textContent = `Welcome back, ${displayName}!`; loadDashboardData(); loadInventory(); }
+    async function handleSignOut() { if (realtimeChannel) { db.removeChannel(realtimeChannel); realtimeChannel = null; } await db.auth.signOut(); }
+    function showAppScreen() { DOMElements.authScreen.classList.add('hidden'); DOMElements.appScreen.classList.remove('hidden'); const displayName = currentUser.email.split('@')[0]; DOMElements.welcomeMessage.textContent = `Welcome back, ${displayName}!`; loadInventory(); loadSalesHistory(); listenForInventoryChanges(); }
     function showAuthScreen() { DOMElements.authScreen.classList.remove('hidden'); DOMElements.appScreen.classList.add('hidden'); }
+    function listenForInventoryChanges() { if (realtimeChannel) { db.removeChannel(realtimeChannel); } realtimeChannel = db.channel('public:tables').on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, payload => { loadInventory(); }).on('postgres_changes', { event: '*', schema: 'public', table: 'stock_batches' }, payload => { loadInventory(); }).subscribe(); }
 
-    // --- VIEW NAVIGATION ---
     function switchView(viewId, params = {}) { DOMElements.views.forEach(view => view.classList.remove('active-view')); document.getElementById(`${viewId}-view`).classList.add('active-view'); DOMElements.navLinks.forEach(link => { link.classList.remove('active', 'bg-slate-700', 'text-white'); if(link.dataset.view === viewId) link.classList.add('active', 'bg-slate-700', 'text-white'); }); if (viewId === 'billing') { setTimeout(() => DOMElements.barcodeSearchInput.focus(), 0); } if (viewId === 'inventory') { renderInventoryTable(params); } if (viewId === 'history') { loadSalesHistory(); } if (viewId === 'reports') { loadReportsData(); } }
+    async function loadDashboardData() { const today = new Date(); today.setHours(0, 0, 0, 0); const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1); const { data: sales, error: salesError } = await db.from('sales').select('total').gte('created_at', today.toISOString()).lt('created_at', tomorrow.toISOString()); if (salesError) { console.error('Error fetching dashboard sales:', salesError); return; } const totalSales = sales.reduce((sum, sale) => sum + sale.total, 0); DOMElements.totalSales.textContent = `₹${totalSales.toFixed(2)}`; DOMElements.totalTransactions.textContent = sales.length; const lowStockCount = inventoryCache.filter(p => p.totalStock > 0 && p.totalStock < 10).length; DOMElements.lowStockItems.textContent = lowStockCount; }
     
-    // --- DASHBOARD ---
-    async function loadDashboardData() { /* ... */ }
-    
-    // --- INVENTORY & STOCK ---
-    async function loadInventory() { /* ... */ }
-    function renderInventoryTable(filters = {}) { /* ... */ }
-    async function handleDeleteProduct(productId, productName) { /* ... */ }
+    async function loadInventory() { const { data, error } = await db.from('products').select(`*, stock_batches(*)`).order('created_at', { ascending: true }).order('received_at', { foreignTable: 'stock_batches', ascending: true }); if (error) { console.error('Error loading inventory:', error); return; } inventoryCache = data.map(product => { const activeBatches = product.stock_batches.filter(b => b.quantity_remaining > 0); const totalStock = activeBatches.reduce((sum, b) => sum + b.quantity_remaining, 0); return { ...product, batches: activeBatches, totalStock }; }); renderInventoryTable(); await loadDashboardData(); }
+    function renderInventoryTable(filters = {}) { let itemsToRender = inventoryCache; if (filters.lowStockOnly) { itemsToRender = inventoryCache.filter(p => p.totalStock > 0 && p.totalStock < 10); DOMElements.inventoryHeader.innerHTML = `<div><h2 class="text-2xl font-bold text-yellow-600">Showing Low Stock Items</h2><button id="show-all-btn" class="text-sm text-blue-500 hover:underline mt-1">Show All Items</button></div>`; } else { DOMElements.inventoryHeader.innerHTML = `<h2 class="text-2xl font-bold text-slate-800">Manage Inventory</h2>`; } DOMElements.inventoryTableBody.innerHTML = ''; if (itemsToRender.length === 0) { DOMElements.inventoryTableBody.innerHTML = `<tr><td colspan="6" class="text-center p-6 text-slate-500">No products found.</td></tr>`; return; } itemsToRender.forEach(product => { const row = `<tr class="border-b hover:bg-slate-50"><td class="p-3 font-semibold">${product.name}</td><td class="p-3 font-mono">${product.barcode || 'N/A'}</td><td class="p-3">${product.category}</td><td class="p-3 text-lg font-bold ${product.totalStock < 10 && product.totalStock > 0 ? 'text-red-500' : ''}">${product.totalStock}</td><td class="p-3 text-xs">${product.batches.length}</td><td class="p-3 text-center"><button class="delete-product-btn text-red-500 hover:text-red-700" data-id="${product.id}" data-name="${product.name}"><i class="fas fa-trash-alt"></i></button></td></tr>`; DOMElements.inventoryTableBody.insertAdjacentHTML('beforeend', row); }); }
+    async function handleDeleteProduct(productId, productName) { if (!confirm(`Are you sure you want to delete "${productName}"?\nThis action cannot be undone.`)) { return; } const { error } = await db.from('products').delete().eq('id', productId); if (error) { alert('Error deleting product: ' + error.message); } }
     function showAddProductModal() { DOMElements.addProductForm.reset(); showModal(DOMElements.addProductModal); DOMElements.newProductName.focus(); }
     function hideAddProductModal() { hideModal(DOMElements.addProductModal); }
-    async function handleAddProductSubmit(e) { /* ... */ }
+    async function handleAddProductSubmit(e) { e.preventDefault(); const barcode = DOMElements.newProductBarcode.value.trim(); if (barcode && inventoryCache.find(p => p.barcode === barcode)) { alert(`Error: Barcode '${barcode}' already exists.`); return; } const newProductData = { name: DOMElements.newProductName.value, barcode: barcode || null, category: DOMElements.newProductCategory.value, user_id: currentUser.id }; const { error } = await db.from('products').insert(newProductData); if (error) { alert('Error creating product: ' + error.message); return; } alert(`Product "${newProductData.name}" created successfully!`); hideAddProductModal(); }
     function populateNewProductBarcode(barcodeText) { DOMElements.newProductBarcode.value = barcodeText; }
     function showReceiveStockModal() { selectedProductForBatch = null; DOMElements.receiveStockForm.reset(); DOMElements.batchDetailsFields.classList.add('hidden'); DOMElements.confirmBatchBtn.disabled = true; showModal(DOMElements.receiveStockModal); DOMElements.productSearchInput.focus(); }
     function hideReceiveStockModal() { hideModal(DOMElements.receiveStockModal); }
-    function handleProductSearch() { /* ... */ }
-    function selectProductForBatch(product) { /* ... */ }
-    async function handleReceiveStockSubmit(e) { /* ... */ }
-    
-    // --- BILLING ---
-    function findProducts(term) { /* ... */ }
-    function processBarcode(barcodeText) { /* ... */ }
-    function addProductToBill(product) { /* ... */ }
-    function renderBill() { /* ... */ }
-    function updateBillSummary() { /* ... */ }
-    function handleBillQuantityChange(batchId, change) { /* ... */ }
-    function handleRemoveItem(batchId) { /* ... */ }
-    function cancelSale() { /* ... */ }
-    function clearAndFocusSearch() { /* ... */ }
-    function handleBarcodeSearch(event) { /* ... */ }
-    function renderSearchResults(results) { /* ... */ }
-    function startCameraScanner(onSuccessCallback) { /* ... */ }
-    function stopCameraScanner() { /* ... */ }
-    function processInventoryScan(barcodeText) { /* ... */ }
-    function showReceiptPreview() { /* ... */ }
-    async function handleConfirmAndPrint() { /* ... */ }
-    
-    // --- SALES HISTORY ---
-    async function loadSalesHistory(filters = {}) { /* ... */ }
-    function renderHistoryTable() { /* ... */ }
-    function showHistoryDetail(saleId) { /* ... */ }
-    function handleReprint(saleId) { /* ... */ }
+    function handleProductSearch() { const term = DOMElements.productSearchInput.value.toLowerCase().trim(); if (term.length < 2) { DOMElements.productSearchResults.classList.add('hidden'); return; } const results = inventoryCache.filter(p => p.name.toLowerCase().includes(term) || (p.barcode && p.barcode.includes(term))); DOMElements.productSearchResults.innerHTML = ''; results.forEach(p => { const div = document.createElement('div'); div.className = 'p-2 hover:bg-gray-100 cursor-pointer'; div.textContent = `${p.name} (${p.barcode || 'No Barcode'})`; div.onclick = () => selectProductForBatch(p); DOMElements.productSearchResults.appendChild(div); }); DOMElements.productSearchResults.classList.remove('hidden'); }
+    function selectProductForBatch(product) { selectedProductForBatch = product; DOMElements.productSearchResults.classList.add('hidden'); DOMElements.productSearchInput.value = product.name; DOMElements.batchDetailsFields.classList.remove('hidden'); DOMElements.confirmBatchBtn.disabled = false; DOMElements.selectedProductName.textContent = product.name; DOMElements.batchQuantity.focus(); }
+    async function handleReceiveStockSubmit(e) { e.preventDefault(); if (!selectedProductForBatch) { alert("Please select a product first."); return; } const sellingPrice = parseFloat(DOMElements.batchSellingPrice.value); const batchData = { product_id: selectedProductForBatch.id, user_id: currentUser.id, quantity_received: parseInt(DOMElements.batchQuantity.value), quantity_remaining: parseInt(DOMElements.batchQuantity.value), purchase_price: parseFloat(DOMElements.batchPurchasePrice.value), selling_price: sellingPrice, }; const { error } = await db.from('stock_batches').insert(batchData); if (error) { alert('Error saving batch: ' + error.message); return; } await db.from('products').update({ latest_selling_price: sellingPrice }).eq('id', selectedProductForBatch.id); alert('New batch received successfully!'); hideReceiveStockModal(); }
+    function findProducts(term) { const lowerCaseTerm = term.toLowerCase(); return inventoryCache.filter(p => p.name.toLowerCase().includes(lowerCaseTerm) || (p.barcode && p.barcode.includes(term))); }
+    function processBarcode(barcodeText) { const product = inventoryCache.find(p => p.barcode === barcodeText); if (product) { addProductToBill(product); } else { const results = findProducts(barcodeText); if (results.length === 1) { addProductToBill(results[0]); } else { alert('Product not found!'); } } }
+    function addProductToBill(product) { if (product.totalStock <= 0) { alert(`${product.name} is out of stock.`); return; } const oldestBatch = product.batches[0]; const existingItem = currentBill.find(item => item.batch_id === oldestBatch.id); if (existingItem) { if (existingItem.quantity < oldestBatch.quantity_remaining) { existingItem.quantity++; } else { alert(`Stock limit for this batch reached.`); } } else { currentBill.push({ product_id: product.id, batch_id: oldestBatch.id, name: product.name, quantity: 1, price: oldestBatch.selling_price, purchase_price: oldestBatch.purchase_price, max_qty: oldestBatch.quantity_remaining, category: product.category, }); } renderBill(); clearAndFocusSearch(); }
+    function renderBill() { DOMElements.billItemsBody.innerHTML = ''; DOMElements.billPlaceholder.classList.toggle('hidden', currentBill.length > 0); currentBill.forEach(item => { const row = `<tr class="border-b hover:bg-slate-50" data-batch-id="${item.batch_id}"><td class="p-3">${item.name} <span class="text-xs text-slate-500">(Batch #${item.batch_id.substring(0,4)})</span></td><td class="p-3">₹${item.price.toFixed(2)}</td><td class="p-3"><div class="flex items-center justify-center"><button class="decrement-qty-btn bg-slate-200 rounded-full w-6 h-6 flex items-center justify-center">-</button><span class="px-3 font-semibold">${item.quantity}</span><button class="increment-qty-btn bg-slate-200 rounded-full w-6 h-6 flex items-center justify-center">+</button></div></td><td class="p-3 font-semibold">₹${(item.price * item.quantity).toFixed(2)}</td><td class="p-3 text-center"><button class="remove-item-btn text-red-500 hover:text-red-700"><i class="fas fa-trash-alt"></i></button></td></tr>`; DOMElements.billItemsBody.insertAdjacentHTML('beforeend', row); }); updateBillSummary(); DOMElements.completeSaleBtn.disabled = currentBill.length === 0; }
+    function updateBillSummary() { const subtotal = currentBill.reduce((sum, item) => sum + (item.price * item.quantity), 0); const discount = currentBill.filter(item => item.category === 'General').reduce((sum, item) => sum + (item.price * item.quantity), 0) * 0.02; DOMElements.billSubtotal.textContent = `₹${subtotal.toFixed(2)}`; DOMElements.billDiscount.textContent = `-₹${discount.toFixed(2)}`; DOMElements.billTotal.textContent = `₹${(subtotal - discount).toFixed(2)}`; }
+    function handleBillQuantityChange(batchId, change) { const item = currentBill.find(i => i.batch_id === batchId); if (!item) return; const newQuantity = item.quantity + change; if (change > 0) { if (newQuantity <= item.max_qty) { item.quantity = newQuantity; } else { alert(`Stock limit for this batch (${item.max_qty}) reached.`); } } else { if (newQuantity > 0) { item.quantity = newQuantity; } else { handleRemoveItem(batchId); } } renderBill(); }
+    function handleRemoveItem(batchId) { currentBill = currentBill.filter(item => item.batch_id !== batchId); renderBill(); }
+    function cancelSale() { currentBill = []; renderBill(); DOMElements.customerNameInput.value = ''; DOMElements.customerPhoneInput.value = ''; }
+    function clearAndFocusSearch() { DOMElements.barcodeSearchInput.value = ''; DOMElements.searchResults.classList.add('hidden'); DOMElements.barcodeSearchInput.focus(); }
+    function handleBarcodeSearch(event) { const searchTerm = DOMElements.barcodeSearchInput.value.trim(); if (event.key === 'Enter') { if (!searchTerm) return; processBarcode(searchTerm); clearAndFocusSearch(); } else { if (searchTerm.length < 1) { DOMElements.searchResults.classList.add('hidden'); return; } renderSearchResults(findProducts(searchTerm)); } }
+    function renderSearchResults(results) { if (results.length === 0) { DOMElements.searchResults.classList.add('hidden'); return; } DOMElements.searchResults.innerHTML = results.map(p => `<div class="p-3 hover:bg-slate-100 cursor-pointer search-result-item" data-id="${p.id}"><p class="font-semibold">${p.name}</p><p class="text-sm text-slate-500">Barcode: ${p.barcode || 'N/A'} | Stock: ${p.totalStock}</p></div>`).join(''); DOMElements.searchResults.classList.remove('hidden'); }
+    function startCameraScanner(onSuccessCallback) { showModal(DOMElements.cameraScannerModal); const onScanSuccess = (decodedText, decodedResult) => { if (navigator.vibrate) navigator.vibrate(100); stopCameraScanner(); onSuccessCallback(decodedText); }; const config = { fps: 10 }; cameraScanner = new Html5Qrcode("reader"); cameraScanner.start({ facingMode: "environment" }, config, onScanSuccess, (errorMessage) => {}).catch(err => { console.error("FATAL: Camera start error:", err); stopCameraScanner(); }); }
+    function stopCameraScanner() { if (cameraScanner && cameraScanner.isScanning) { cameraScanner.stop().finally(() => { hideModal(DOMElements.cameraScannerModal); cameraScanner = null; }); } else { hideModal(DOMElements.cameraScannerModal); } }
+    function processInventoryScan(barcodeText) { const product = inventoryCache.find(p => p.barcode === barcodeText); if (product) { selectProductForBatch(product); } else { alert('Product not found. Please add it as a new product first.'); } }
+    function showReceiptPreview() { DOMElements.receiptDate.textContent = new Date().toLocaleString(); DOMElements.receiptCustomer.textContent = DOMElements.customerNameInput.value ? `Customer: ${DOMElements.customerNameInput.value}` : ''; DOMElements.receiptItems.innerHTML = currentBill.map(item => `<div class="grid grid-cols-12 gap-1"><div class="col-span-5">${item.name}</div><div class="col-span-2 text-right">${item.quantity}</div><div class="col-span-2 text-right">@${item.price.toFixed(2)}</div><div class="col-span-3 text-right">₹${(item.price * item.quantity).toFixed(2)}</div></div>`).join(''); DOMElements.receiptSubtotal.textContent = DOMElements.billSubtotal.textContent; DOMElements.receiptDiscount.textContent = DOMElements.billDiscount.textContent; DOMElements.receiptTotal.textContent = DOMElements.billTotal.textContent; showModal(DOMElements.receiptModal); }
+    async function handleConfirmAndPrint() { const saleData = { user_id: currentUser.id, items: currentBill, subtotal: parseFloat(DOMElements.billSubtotal.textContent.replace('₹', '')) }; const { error: saleError } = await db.from('sales').insert([saleData]); if (saleError) { alert('Error saving sale: ' + saleError.message); return; } const batchUpdates = currentBill.map(item => db.from('stock_batches').update({ quantity_remaining: item.max_qty - item.quantity }).eq('id', item.batch_id)); await Promise.all(batchUpdates); window.print(); hideModal(DOMElements.receiptModal); cancelSale(); }
+    async function loadSalesHistory(filters = {}) { let query = db.from('sales').select('*, items'); if (filters.startDate) { query = query.gte('created_at', filters.startDate); } if (filters.endDate) { const nextDay = new Date(filters.endDate); nextDay.setDate(nextDay.getDate() + 1); query = query.lt('created_at', nextDay.toISOString().split('T')[0]); } if (filters.customerName) { query = query.ilike('customer_name', `%${filters.customerName}%`); } if (!filters.startDate && !filters.endDate) { const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30); query = query.gte('created_at', thirtyDaysAgo.toISOString()); } const { data, error } = await query.order('created_at', { ascending: false }); if (error) { console.error('Error fetching history:', error); salesHistoryCache = []; } else { salesHistoryCache = data.map(sale => { let saleProfit = 0; if(sale.items) { sale.items.forEach(item => { saleProfit += (item.price - (item.purchase_price || 0)) * item.quantity; }); } return { ...sale, profit: saleProfit }; }); } renderHistoryTable(); }
+    function renderHistoryTable() { DOMElements.historyTableBody.innerHTML = ''; if (salesHistoryCache.length === 0) { DOMElements.historyTableBody.innerHTML = `<tr><td colspan="4" class="text-center p-6 text-slate-500">No sales found.</td></tr>`; return; } salesHistoryCache.forEach(sale => { const row = `<tr class="border-b hover:bg-slate-50 cursor-pointer history-row" data-id="${sale.id}"><td class="p-3">${new Date(sale.created_at).toLocaleString()}</td><td class="p-3">${sale.customer_name || 'N/A'}</td><td class="p-3 font-semibold">₹${sale.total.toFixed(2)}</td><td class="p-3"><button class="reprint-btn text-blue-500 hover:text-blue-700" data-id="${sale.id}"><i class="fas fa-print"></i></button></td></tr>`; DOMElements.historyTableBody.insertAdjacentHTML('beforeend', row); }); }
+    function showHistoryDetail(saleId) { const sale = salesHistoryCache.find(s => s.id === saleId); if (!sale) return; DOMElements.historyDetailCustomer.textContent = `Customer: ${sale.customer_name || 'N/A'}`; DOMElements.historyDetailDate.textContent = `Billed on: ${new Date(sale.created_at).toLocaleString()}`; DOMElements.historyDetailItems.innerHTML = sale.items.map(item => { const profit = (item.price - (item.purchase_price || 0)) * item.quantity; return `<tr class="border-b"><td class="p-2">${item.name}</td><td class="p-2 text-center">${item.quantity}</td><td class="p-2">₹${item.price.toFixed(2)}</td><td class="p-2 text-green-600">₹${profit.toFixed(2)}</td><td class="p-2 text-right font-semibold">₹${(item.price * item.quantity).toFixed(2)}</td></tr>`;}).join(''); DOMElements.historyDetailTotalProfit.textContent = `₹${(sale.profit || 0).toFixed(2)}`; showModal(DOMElements.historyDetailModal); }
+    function handleReprint(saleId) { /* ... */ } async function getAiSalesSummary() { /* ... */ } async function getRecipeIdea() { /* ... */ }
+    async function loadReportsData() { const ninetyDaysAgo = new Date(); ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90); const { data: sales, error } = await db.from('sales').select('items').gte('created_at', ninetyDaysAgo.toISOString()); if (error) { console.error("Error fetching reports:", error); return; } const productSales = {}; sales.forEach(sale => { sale.items.forEach(item => { productSales[item.product_id] = (productSales[item.product_id] || 0) + item.quantity; }); }); const salesArray = inventoryCache.map(p => ({ id: p.id, name: p.name, totalStock: p.totalStock, unitsSold: productSales[p.id] || 0 })); const fastMoving = [...salesArray].sort((a, b) => b.unitsSold - a.unitsSold).slice(0, 10); const slowMoving = [...salesArray].sort((a, b) => a.unitsSold - b.unitsSold).slice(0, 10); renderReports(fastMoving, slowMoving); }
+    function renderReports(fastMoving, slowMoving) { DOMElements.fastMovingTable.innerHTML = fastMoving.map(p => `<tr class="border-b"><td class="p-2">${p.name}</td><td class="p-2 text-right font-bold">${p.unitsSold}</td><td class="p-2 text-right">${p.totalStock}</td></tr>`).join('') || `<tr><td colspan="3" class="p-4 text-center text-slate-500">Not enough data.</td></tr>`; DOMElements.slowMovingTable.innerHTML = slowMoving.map(p => `<tr class="border-b"><td class="p-2">${p.name}</td><td class="p-2 text-right font-bold">${p.unitsSold}</td><td class="p-2 text-right">${p.totalStock}</td></tr>`).join('') || `<tr><td colspan="3" class="p-4 text-center text-slate-500">Not enough data.</td></tr>`; }
 
-    // --- REPORTS & AI ---
-    async function getAiSalesSummary() { /* ... */ }
-    async function getRecipeIdea() { /* ... */ }
-    let geminiApiKey = localStorage.getItem('geminiApiKey'); function getGeminiApiKey() { /* ... */ } async function callGemini(prompt) { /* ... */ }
-    async function loadReportsData() { /* ... */ }
-    function renderReports(fastMoving, slowMoving) { /* ... */ }
-
-    // --- EVENT LISTENERS ---
-    DOMElements.signinBtn.addEventListener('click', handleSignIn);
-    DOMElements.signupBtn.addEventListener('click', handleSignUp);
-    DOMElements.googleSigninBtn.addEventListener('click', handleGoogleSignIn);
-    DOMElements.logoutBtns.forEach(btn => btn.addEventListener('click', handleSignOut));
+    DOMElements.signinBtn.addEventListener('click', handleSignIn); DOMElements.signupBtn.addEventListener('click', handleSignUp); DOMElements.googleSigninBtn.addEventListener('click', handleGoogleSignIn); DOMElements.logoutBtns.forEach(btn => btn.addEventListener('click', handleSignOut));
     DOMElements.navLinks.forEach(link => link.addEventListener('click', () => switchView(link.dataset.view)));
     DOMElements.lowStockCard.addEventListener('click', () => switchView('inventory', { lowStockOnly: true }));
     DOMElements.inventoryHeader.addEventListener('click', (e) => { if (e.target.id === 'show-all-btn') { renderInventoryTable(); } });
