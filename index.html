@@ -517,9 +517,10 @@
 
 
  printerDevice = await navigator.bluetooth.requestDevice({
- filters: [{ services: [SERVICE_UUID] }],
- optionalServices: [SERVICE_UUID]
- });
+    // filters: [{ services: [SERVICE_UUID] }], // Temporarily disable service filter
+    acceptAllDevices: true, // Show ALL nearby Bluetooth devices
+    optionalServices: [SERVICE_UUID] // Still request the service later if we connect
+});
 
 
  const server = await printerDevice.gatt.connect();
