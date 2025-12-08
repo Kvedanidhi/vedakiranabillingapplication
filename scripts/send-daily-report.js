@@ -9,12 +9,11 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 async function sendReport() {
   console.log("Starting Daily Report...");
 
-  // 2. Get Today's Date (UTC is used for simplicity in database queries)
+  // 2. Get Today's Date
   const today = new Date();
   const dateString = today.toISOString().split('T')[0]; 
   
   // 3. Query Supabase for Today's Sales
-  // We check for sales created on or after today's date
   const { data: sales, error } = await supabase
     .from('sales')
     .select('total')
@@ -43,7 +42,11 @@ async function sendReport() {
   // 6. Send Email
   const mailOptions = {
     from: `"Veda Kirana POS" <${process.env.EMAIL_USER}>`,
-    to: process.env.EMAIL_USER, 
+    
+    // === EDIT THIS LINE BELOW WITH YOUR 3 EMAILS ===
+    to: 'vedakiranaandgeneral@gmail.com, vedanidhikothur@gmail.com, kothurramu@gmail.com', 
+    // ===============================================
+
     subject: `Daily Sales Report - ${dateString}`,
     html: `
       <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
