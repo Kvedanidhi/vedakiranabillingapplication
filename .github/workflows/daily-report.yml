@@ -1,0 +1,33 @@
+name: Daily Sales Report
+
+on:
+  schedule:
+    # Runs at 16:30 UTC daily, which is 10:00 PM IST (Indian Standard Time)
+    - cron: '30 16 * * *'
+  # Allows you to run this manually from the Actions tab for testing
+  workflow_dispatch:
+
+jobs:
+  send-email:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        # Installs the required libraries temporarily
+        run: npm install @supabase/supabase-js nodemailer
+
+      - name: Run Report Script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+        run: node scripts/send-daily-report.js
