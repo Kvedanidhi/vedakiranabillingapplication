@@ -1,22 +1,23 @@
 name: Monthly Sales Report
 on:
   schedule:
-    - cron: '30 14 1 * *'
-  workflow_dispatch:
+    - cron: '30 14 1 * *' # 8:00 PM IST on the 1st
+  workflow_dispatch: # Allows manual run
 
 jobs:
-  send-report:
+  send-monthly-report:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20' # Upgraded to Node 20
+          node-version: '20'
       - run: npm install @supabase/supabase-js nodemailer
-      - run: node scripts/send-monthly-report.js
+      - name: Run Script
+        run: node scripts/send-monthly-report.js
         env:
-          # This connects the GitHub Secrets to your script
+          # THESE MUST MATCH YOUR GITHUB SECRET NAMES EXACTLY
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }} 
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
