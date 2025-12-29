@@ -52,7 +52,7 @@ async function sendVyaparStyleReport() {
 
   const mailOptions = {
     from: `"Veda Kirana POS" <${process.env.EMAIL_USER}>`,
-    to: 'vedanidhikothur@gmail.com', // Replace with your actual email(s)
+    to: 'vedanidhikothur@gmail.com, kothurramu@gmail.com, vedakiranaandgeneral@gmail.com', // Replace with your actual email(s)
     subject: `Daily Business Report - ${today}`,
     html: `
       <div style="font-family: Arial, sans-serif; color: #333;">
