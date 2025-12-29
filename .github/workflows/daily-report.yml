@@ -2,10 +2,9 @@ name: Daily Sales Report
 
 on:
   schedule:
-    # Runs at 16:30 UTC daily, which is 10:00 PM IST (Indian Standard Time)
-    - cron: '30 16 * * *'
-  # Allows you to run this manually from the Actions tab for testing
-  workflow_dispatch:
+    # 30 14 means 14:30 UTC, which is exactly 8:00 PM IST
+    - cron: '30 14 * * *'
+  workflow_dispatch: # This allows you to also run it manually whenever you want
 
 jobs:
   send-email:
