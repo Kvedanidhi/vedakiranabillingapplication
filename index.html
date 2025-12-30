@@ -382,6 +382,7 @@
     } else { DOMElements.searchResults.classList.add('hidden'); }
  }
 
+ // FIXED GRID RATIO: 4-2-3-3
  function showReceiptPreview() { 
     DOMElements.receiptDate.textContent = new Date().toLocaleString('en-IN'); 
     DOMElements.receiptCustomer.textContent = DOMElements.customerNameInput.value ? `Customer: ${DOMElements.customerNameInput.value}` : '';
@@ -432,6 +433,7 @@
     showModal(DOMElements.historyDetailModal);
  }
 
+ // FIXED REPRINT GRID: 4-2-3-3
  function handleReprint(saleId) {
     const sale = salesHistoryCache.find(s => s.id === saleId);
     if (!sale) return;
@@ -466,6 +468,7 @@
     DOMElements.slowMovingTable.innerHTML = slow.map(p => `<tr class="border-b"><td class="p-2">${p.name}</td><td class="p-2 text-right font-bold">${p.sold}</td><td class="p-2 text-right">${p.totalStock}</td></tr>`).join('');
  }
 
+ // DIRECT PRINTER LOGIC
  async function connectPrinter() {
     try {
         printerDevice = await navigator.bluetooth.requestDevice({
@@ -486,32 +489,57 @@
     const encoder = new TextEncoder();
     const init = [0x1B, 0x40], cut = [0x1D, 0x56, 0x41], center = [0x1B, 0x61, 0x01], left = [0x1B, 0x61, 0x00], boldOn = [0x1B, 0x45, 0x01], boldOff = [0x1B, 0x45, 0x00];
 
-    const reprintData = DOMElements.directPrintBtn.dataset.reprintData;
-    let dataToPrint = reprintData ? JSON.parse(reprintData) : {
-        items: currentBill,
-        customer_name: DOMElements.customerNameInput.value,
-        total: DOMElements.billTotal.textContent,
-        isReprint: false
+    const reprintDataRaw = DOMElements.directPrintBtn.dataset.reprintData;
+    let dataToPrint;
+    if (reprintDataRaw) {
+        dataToPrint = JSON.parse(reprintDataRaw);
+        dataToPrint.sub = `Subtotal: ${dataToPrint.subtotal.toFixed(2)}`;
+        dataToPrint.dis = `Discount: -${dataToPrint.discount.toFixed(2)}`;
+        dataToPrint.tot = `TOTAL: ${dataToPrint.total.toFixed(2)}`;
+    } else {
+        dataToPrint = {
+            items: currentBill,
+            sub: `Subtotal: ${DOMElements.billSubtotal.textContent.replace('₹','')}`,
+            dis: `Discount: ${DOMElements.billDiscount.textContent.replace('₹','')}`,
+            tot: `TOTAL: ${DOMElements.billTotal.textContent.replace('₹','')}`
+        };
+    }
+
+    // Helper to wrap long item names
+    const wrapItemName = (name, limit) => {
+        let lines = [];
+        for (let i = 0; i < name.length; i += limit) {
+            lines.push(name.substring(i, i + limit));
+        }
+        return lines;
     };
 
     let content = "\n";
     content += "VEDA KIRANA AND GENERAL STORE\nRatna Complex, 509338\nPhone: 8309913409\n\n";
-    if (reprintData) content += "*** DUPLICATE RECEIPT ***\n\n";
-    content += "Item        Qty  Price  Total\n------------------------------\n";
+    if (reprintDataRaw) content += "*** DUPLICATE RECEIPT ***\n\n";
+    content += "Item         Qty   Price   Total\n--------------------------------\n";
     
     dataToPrint.items.forEach(item => {
-        let name = item.name.substring(0, 10).padEnd(11);
-        let qty = item.quantity.toString().padEnd(4);
-        let pr = item.price.toFixed(2).padStart(6);
-        let tot = (item.price * item.quantity).toFixed(2).padStart(7);
-        content += `${name}${qty}${pr}${tot}\n`;
+        let nameLines = wrapItemName(item.name, 12);
+        let qty = item.quantity.toString().padStart(3);
+        let pr = item.price.toFixed(2).padStart(8);
+        let tot = (item.price * item.quantity).toFixed(2).padStart(8);
+        
+        // Print first line with all details
+        content += `${nameLines[0].padEnd(12)} ${qty} ${pr} ${tot}\n`;
+        // Print rest of the wrapped name
+        for(let i=1; i < nameLines.length; i++) {
+            content += `${nameLines[i]}\n`;
+        }
     });
 
-    content += "------------------------------\n";
-    content += `TOTAL: ${dataToPrint.total}\n\nTHANK YOU!\nVisit Again\n\n\n\n`;
+    content += "--------------------------------\n";
+    content += `${dataToPrint.sub.padStart(32)}\n`;
+    content += `${dataToPrint.dis.padStart(32)}\n`;
+    content += `${dataToPrint.tot.padStart(32)}\n\n`;
+    content += "THANK YOU!\nVisit Again\n\n\n\n";
 
     const fullBuffer = new Uint8Array([...init, ...center, ...boldOn, ...encoder.encode(content), ...cut]);
-    // Send in 20-byte chunks to avoid buffer overflow
     for (let i = 0; i < fullBuffer.length; i += 20) {
         await printerCharacteristic.writeValue(fullBuffer.slice(i, i + 20));
     }
@@ -543,6 +571,7 @@
  DOMElements.runConversionBtn.onclick = handleBulkConversion;
  DOMElements.connectPrinterBtn.onclick = connectPrinter;
  DOMElements.directPrintBtn.onclick = handleDirectPrint;
+
  DOMElements.inventoryTableBody.onclick = (e) => {
     const delBtn = e.target.closest('.delete-product-btn');
     if (delBtn) handleDeleteProduct(delBtn.dataset.id, delBtn.dataset.name);
