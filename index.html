@@ -382,7 +382,6 @@
     } else { DOMElements.searchResults.classList.add('hidden'); }
  }
 
- // FIXED GRID RATIO: 4-2-3-3
  function showReceiptPreview() { 
     DOMElements.receiptDate.textContent = new Date().toLocaleString('en-IN'); 
     DOMElements.receiptCustomer.textContent = DOMElements.customerNameInput.value ? `Customer: ${DOMElements.customerNameInput.value}` : '';
@@ -390,13 +389,13 @@
         <div class="grid grid-cols-12 gap-1 border-b border-gray-50 pb-1">
             <div class="col-span-4 truncate">${item.name}</div>
             <div class="col-span-2 text-right readable-num">${item.quantity}</div>
-            <div class="col-span-3 text-right readable-num">${item.price.toFixed(2)}</div>
-            <div class="col-span-3 text-right readable-num">₹${(item.price * item.quantity).toFixed(2)}</div>
+            <div class="col-span-3 text-right readable-num">${Math.round(item.price)}</div>
+            <div class="col-span-3 text-right readable-num">₹${Math.round(item.price * item.quantity)}</div>
         </div>`).join(''); 
     DOMElements.receiptSubtotal.textContent = DOMElements.billSubtotal.textContent; 
     DOMElements.receiptDiscount.textContent = DOMElements.billDiscount.textContent; 
     DOMElements.receiptTotal.textContent = DOMElements.billTotal.textContent; 
-    DOMElements.directPrintBtn.dataset.reprintData = ""; // Clear reprint flag
+    DOMElements.directPrintBtn.dataset.reprintData = ""; 
     showModal(DOMElements.receiptModal); 
  }
 
@@ -433,7 +432,6 @@
     showModal(DOMElements.historyDetailModal);
  }
 
- // FIXED REPRINT GRID: 4-2-3-3
  function handleReprint(saleId) {
     const sale = salesHistoryCache.find(s => s.id === saleId);
     if (!sale) return;
@@ -443,13 +441,13 @@
         <div class="grid grid-cols-12 gap-1 border-b border-gray-50 pb-1">
             <div class="col-span-4 truncate">${item.name}</div>
             <div class="col-span-2 text-right readable-num">${item.quantity}</div>
-            <div class="col-span-3 text-right readable-num">${item.price.toFixed(2)}</div>
-            <div class="col-span-3 text-right readable-num">₹${(item.price * item.quantity).toFixed(2)}</div>
+            <div class="col-span-3 text-right readable-num">${Math.round(item.price)}</div>
+            <div class="col-span-3 text-right readable-num">₹${Math.round(item.price * item.quantity)}</div>
         </div>`).join('');
     DOMElements.receiptSubtotal.textContent = `₹${sale.subtotal.toFixed(2)}`;
     DOMElements.receiptDiscount.textContent = `-₹${sale.discount.toFixed(2)}`;
     DOMElements.receiptTotal.textContent = `₹${sale.total.toFixed(2)}`;
-    DOMElements.directPrintBtn.dataset.reprintData = JSON.stringify(sale); // Store for direct print
+    DOMElements.directPrintBtn.dataset.reprintData = JSON.stringify(sale);
     showModal(DOMElements.receiptModal);
  }
 
@@ -468,7 +466,6 @@
     DOMElements.slowMovingTable.innerHTML = slow.map(p => `<tr class="border-b"><td class="p-2">${p.name}</td><td class="p-2 text-right font-bold">${p.sold}</td><td class="p-2 text-right">${p.totalStock}</td></tr>`).join('');
  }
 
- // DIRECT PRINTER LOGIC
  async function connectPrinter() {
     try {
         printerDevice = await navigator.bluetooth.requestDevice({
@@ -487,7 +484,7 @@
  async function handleDirectPrint() {
     if (!printerCharacteristic) return alert("Connect printer first!");
     const encoder = new TextEncoder();
-    const init = [0x1B, 0x40], cut = [0x1D, 0x56, 0x41], center = [0x1B, 0x61, 0x01], left = [0x1B, 0x61, 0x00], boldOn = [0x1B, 0x45, 0x01], boldOff = [0x1B, 0x45, 0x00];
+    const init = [0x1B, 0x40], cut = [0x1D, 0x56, 0x41], center = [0x1B, 0x61, 0x01], boldOn = [0x1B, 0x45, 0x01], boldOff = [0x1B, 0x45, 0x00];
 
     const reprintDataRaw = DOMElements.directPrintBtn.dataset.reprintData;
     let dataToPrint;
@@ -505,12 +502,9 @@
         };
     }
 
-    // Helper to wrap long item names
     const wrapItemName = (name, limit) => {
         let lines = [];
-        for (let i = 0; i < name.length; i += limit) {
-            lines.push(name.substring(i, i + limit));
-        }
+        for (let i = 0; i < name.length; i += limit) { lines.push(name.substring(i, i + limit)); }
         return lines;
     };
 
@@ -522,12 +516,10 @@
     dataToPrint.items.forEach(item => {
         let nameLines = wrapItemName(item.name, 12);
         let qty = item.quantity.toString().padStart(3);
-        let pr = item.price.toFixed(2).padStart(8);
-        let tot = (item.price * item.quantity).toFixed(2).padStart(8);
+        let pr = Math.round(item.price).toString().padStart(7);
+        let tot = Math.round(item.price * item.quantity).toString().padStart(8);
         
-        // Print first line with all details
         content += `${nameLines[0].padEnd(12)} ${qty} ${pr} ${tot}\n`;
-        // Print rest of the wrapped name
         for(let i=1; i < nameLines.length; i++) {
             content += `${nameLines[i]}\n`;
         }
@@ -571,7 +563,6 @@
  DOMElements.runConversionBtn.onclick = handleBulkConversion;
  DOMElements.connectPrinterBtn.onclick = connectPrinter;
  DOMElements.directPrintBtn.onclick = handleDirectPrint;
-
  DOMElements.inventoryTableBody.onclick = (e) => {
     const delBtn = e.target.closest('.delete-product-btn');
     if (delBtn) handleDeleteProduct(delBtn.dataset.id, delBtn.dataset.name);
