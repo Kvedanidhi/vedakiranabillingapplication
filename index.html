@@ -142,6 +142,7 @@
  inventoryScanBtn: document.getElementById('inventory-scan-btn'),
  fastMovingTable: document.getElementById('fast-moving-table'), slowMovingTable: document.getElementById('slow-moving-table'),
  connectPrinterBtn: document.getElementById('connect-printer-btn'),
+ // New elements
  inventoryLiveSearch: document.getElementById('inventory-live-search'),
  bulkConvertBtn: document.getElementById('bulk-convert-btn'),
  bulkConvertModal: document.getElementById('bulk-convert-modal'),
@@ -433,6 +434,7 @@
     showModal(DOMElements.historyDetailModal);
  }
 
+ // REPRINT GRID RATIO: 4-2-3-3
  function handleReprint(saleId) {
     const sale = salesHistoryCache.find(s => s.id === saleId);
     if (!sale) return;
@@ -466,7 +468,7 @@
     DOMElements.slowMovingTable.innerHTML = slow.map(p => `<tr class="border-b"><td class="p-2">${p.name}</td><td class="p-2 text-right font-bold">${p.sold}</td><td class="p-2 text-right">${p.totalStock}</td></tr>`).join('');
  }
 
- // PRINTER LOGIC
+ // DIRECT PRINTER LOGIC
  async function connectPrinter() {
     try {
         printerDevice = await navigator.bluetooth.requestDevice({
@@ -489,10 +491,32 @@
     const encoder = new TextEncoder();
     const init = [0x1B, 0x40];
     const cut = [0x1D, 0x56, 0x41];
+    const boldOn = [0x1B, 0x45, 0x01];
+    const boldOff = [0x1B, 0x45, 0x00];
+    const center = [0x1B, 0x61, 0x01];
+    const left = [0x1B, 0x61, 0x00];
+
+    let content = "";
+    content += "VEDA KIRANA AND GENERAL STORE\n";
+    content += "Ratna Complex, 509338\n";
+    content += "Phone: 8309913409\n\n";
+    content += "Item        Qty  Price  Total\n";
+    content += "------------------------------\n";
     
-    // Simple print example - can be expanded to full formatting logic
-    await printerCharacteristic.writeValue(new Uint8Array([...init, ...encoder.encode("VEDA KIRANA STORE\nVisit Again\n"), ...cut]));
-    window.print(); // Fallback to browser print
+    currentBill.forEach(item => {
+        let name = item.name.substring(0, 10).padEnd(11);
+        let qty = item.quantity.toString().padEnd(4);
+        let pr = item.price.toFixed(2).padStart(6);
+        let tot = (item.price * item.quantity).toFixed(2).padStart(7);
+        content += `${name}${qty}${pr}${tot}\n`;
+    });
+
+    content += "------------------------------\n";
+    content += `TOTAL: ${DOMElements.billTotal.textContent}\n\n`;
+    content += "THANK YOU!\n";
+    content += "Visit Again\n\n\n";
+
+    await printerCharacteristic.writeValue(new Uint8Array([...init, ...center, ...boldOn, ...encoder.encode(content), ...cut]));
  }
 
  DOMElements.signinBtn.onclick = handleSignIn;
