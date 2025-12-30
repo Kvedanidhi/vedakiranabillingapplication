@@ -30,7 +30,7 @@
 </head>
 <body class="bg-slate-100">
 
- <div id="auth-screen" class="min-h-screen flex items-center justify-center bg-slate-900 p-4"><div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md"><div class="text-center mb-6"><h1 class="text-3xl font-bold text-slate-800">VEDA KIRANA POS</h1><p class="text-slate-500">Welcome! Please sign in to continue.</p></div><form id="auth-form" class="space-y-4"><input type="email" id="email" placeholder="Email" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"><input type="password" id="password" placeholder="Password" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"><div id="auth-error" class="text-red-500 text-sm hidden"></div><div class="flex space-x-4"><button type="button" id="signin-btn" class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105 active:scale-95">Sign In</button><button type="button" id="signup-btn" class="w-full bg-slate-700 text-white py-3 rounded-lg hover:bg-slate-800 transition-all duration-200 transform hover:scale-105 active:scale-95">Sign Up</button></div></form><div class="text-center my-4 relative"><hr class="border-slate-200"><span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-slate-400 text-sm">OR</span></div><button id="google-signin-btn" class="w-full flex items-center justify-center bg-white border border-slate-300 text-slate-700 py-3 rounded-lg hover:bg-slate-50 transition-colors"><img src="https://www.google.com/favicon.ico" class="w-5 h-5 mr-2" alt="Google icon"> Continue with Google</button></div></div>
+ <div id="auth-screen" class="min-h-screen flex items-center justify-center bg-slate-900 p-4"><div class="bg-white p-8 rounded-2xl shadow-xl w-full max-md"><div class="text-center mb-6"><h1 class="text-3xl font-bold text-slate-800">VEDA KIRANA POS</h1><p class="text-slate-500">Welcome! Please sign in to continue.</p></div><form id="auth-form" class="space-y-4"><input type="email" id="email" placeholder="Email" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"><input type="password" id="password" placeholder="Password" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"><div id="auth-error" class="text-red-500 text-sm hidden"></div><div class="flex space-x-4"><button type="button" id="signin-btn" class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105 active:scale-95">Sign In</button><button type="button" id="signup-btn" class="w-full bg-slate-700 text-white py-3 rounded-lg hover:bg-slate-800 transition-all duration-200 transform hover:scale-105 active:scale-95">Sign Up</button></div></form><div class="text-center my-4 relative"><hr class="border-slate-200"><span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-slate-400 text-sm">OR</span></div><button id="google-signin-btn" class="w-full flex items-center justify-center bg-white border border-slate-300 text-slate-700 py-3 rounded-lg hover:bg-slate-50 transition-colors"><img src="https://www.google.com/favicon.ico" class="w-5 h-5 mr-2" alt="Google icon"> Continue with Google</button></div></div>
  <div id="app-screen" class="hidden">
  <div class="flex h-screen bg-slate-100">
  <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col"><div class="p-4 border-b border-slate-800 text-center"><h1 class="text-2xl font-bold text-white">Veda Kirana</h1></div><nav class="flex-1 p-2 space-y-2"><a data-view="dashboard" class="nav-link active flex items-center p-3 rounded-lg transition-colors duration-200 hover:bg-slate-800 hover:text-white cursor-pointer"><i class="fas fa-chart-pie mr-3 w-5 text-slate-400"></i> Dashboard</a><a data-view="billing" class="nav-link flex items-center p-3 rounded-lg transition-colors duration-200 hover:bg-slate-800 hover:text-white cursor-pointer"><i class="fas fa-cash-register mr-3 w-5 text-slate-400"></i> Billing</a><a data-view="inventory" class="nav-link flex items-center p-3 rounded-lg transition-colors duration-200 hover:bg-slate-800 hover:text-white cursor-pointer"><i class="fas fa-boxes-stacked mr-3 w-5 text-slate-400"></i> Inventory</a><a data-view="history" class="nav-link flex items-center p-3 rounded-lg transition-colors duration-200 hover:bg-slate-800 hover:text-white cursor-pointer"><i class="fas fa-history mr-3 w-5 text-slate-400"></i> Past History</a><a data-view="reports" class="nav-link flex items-center p-3 rounded-lg transition-colors duration-200 hover:bg-slate-800 hover:text-white cursor-pointer"><i class="fas fa-chart-line mr-3 w-5 text-slate-400"></i> Reports</a></nav><div class="p-4 border-t border-slate-800 space-y-2"><button id="connect-printer-btn" class="w-full bg-blue-600 text-white py-2 rounded-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center"><i class="fas fa-print mr-2"></i> Connect Printer</button><button class="logout-button w-full bg-red-600 text-white py-2 rounded-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center"><i class="fas fa-sign-out-alt mr-2"></i> Logout</button></div></aside>
@@ -142,7 +142,6 @@
  inventoryScanBtn: document.getElementById('inventory-scan-btn'),
  fastMovingTable: document.getElementById('fast-moving-table'), slowMovingTable: document.getElementById('slow-moving-table'),
  connectPrinterBtn: document.getElementById('connect-printer-btn'),
- // New elements
  inventoryLiveSearch: document.getElementById('inventory-live-search'),
  bulkConvertBtn: document.getElementById('bulk-convert-btn'),
  bulkConvertModal: document.getElementById('bulk-convert-modal'),
@@ -383,7 +382,7 @@
     } else { DOMElements.searchResults.classList.add('hidden'); }
  }
 
- // FIXED GRID RATIO: 4-2-3-3
+ // RECEPT GRID RATIO: 4-2-3-3
  function showReceiptPreview() { 
     DOMElements.receiptDate.textContent = new Date().toLocaleString('en-IN'); 
     DOMElements.receiptCustomer.textContent = DOMElements.customerNameInput.value ? `Customer: ${DOMElements.customerNameInput.value}` : '';
@@ -434,7 +433,6 @@
     showModal(DOMElements.historyDetailModal);
  }
 
- // FIXED GRID RATIO: 4-2-3-3
  function handleReprint(saleId) {
     const sale = salesHistoryCache.find(s => s.id === saleId);
     if (!sale) return;
@@ -451,6 +449,50 @@
     DOMElements.receiptDiscount.textContent = `-₹${sale.discount.toFixed(2)}`;
     DOMElements.receiptTotal.textContent = `₹${sale.total.toFixed(2)}`;
     showModal(DOMElements.receiptModal);
+ }
+
+ async function loadReportsData() {
+    const ninetyDaysAgo = new Date(); ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const { data: sales, error } = await db.from('sales').select('items').gte('created_at', ninetyDaysAgo.toISOString());
+    if (error) return;
+    const counts = {};
+    sales.forEach(s => s.items.forEach(i => counts[i.product_id] = (counts[i.product_id] || 0) + i.quantity));
+    const sorted = inventoryCache.map(p => ({ ...p, sold: counts[p.id] || 0 })).sort((a, b) => b.sold - a.sold);
+    renderReports(sorted.slice(0, 10), [...sorted].reverse().slice(0, 10));
+ }
+
+ function renderReports(fast, slow) {
+    DOMElements.fastMovingTable.innerHTML = fast.map(p => `<tr class="border-b"><td class="p-2">${p.name}</td><td class="p-2 text-right font-bold">${p.sold}</td><td class="p-2 text-right">${p.totalStock}</td></tr>`).join('');
+    DOMElements.slowMovingTable.innerHTML = slow.map(p => `<tr class="border-b"><td class="p-2">${p.name}</td><td class="p-2 text-right font-bold">${p.sold}</td><td class="p-2 text-right">${p.totalStock}</td></tr>`).join('');
+ }
+
+ // PRINTER LOGIC
+ async function connectPrinter() {
+    try {
+        printerDevice = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+        });
+        const server = await printerDevice.gatt.connect();
+        const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+        printerCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+        alert("Printer Connected!");
+        DOMElements.connectPrinterBtn.textContent = "Printer Connected";
+        DOMElements.connectPrinterBtn.classList.replace('bg-blue-600', 'bg-green-600');
+    } catch (err) {
+        alert("Connection failed: " + err.message);
+    }
+ }
+
+ async function handleDirectPrint() {
+    if (!printerCharacteristic) return alert("Connect printer first!");
+    const encoder = new TextEncoder();
+    const init = [0x1B, 0x40];
+    const cut = [0x1D, 0x56, 0x41];
+    
+    // Simple print example - can be expanded to full formatting logic
+    await printerCharacteristic.writeValue(new Uint8Array([...init, ...encoder.encode("VEDA KIRANA STORE\nVisit Again\n"), ...cut]));
+    window.print(); // Fallback to browser print
  }
 
  DOMElements.signinBtn.onclick = handleSignIn;
@@ -477,18 +519,21 @@
  DOMElements.bulkSourceInput.oninput = () => handleBulkSearch('source');
  DOMElements.bulkTargetInput.oninput = () => handleBulkSearch('target');
  DOMElements.runConversionBtn.onclick = handleBulkConversion;
+ DOMElements.connectPrinterBtn.onclick = connectPrinter;
+ DOMElements.directPrintBtn.onclick = handleDirectPrint;
 
  DOMElements.historyTableBody.onclick = (e) => {
     const row = e.target.closest('.history-row');
     const reprintBtn = e.target.closest('.reprint-icon-btn');
-    if (reprintBtn) {
-        e.stopPropagation();
-        handleReprint(reprintBtn.dataset.id);
-    } else if (row) {
-        showHistoryDetail(row.dataset.id);
-    }
+    if (reprintBtn) { e.stopPropagation(); handleReprint(reprintBtn.dataset.id); } 
+    else if (row) { showHistoryDetail(row.dataset.id); }
  };
  DOMElements.closeHistoryDetailModalBtn.onclick = () => hideModal(DOMElements.historyDetailModal);
+
+ DOMElements.inventoryTableBody.onclick = (e) => {
+    const delBtn = e.target.closest('.delete-product-btn');
+    if (delBtn) handleDeleteProduct(delBtn.dataset.id, delBtn.dataset.name);
+ };
 
  DOMElements.billItemsBody.onclick = (e) => {
     const row = e.target.closest('tr'); if(!row) return;
