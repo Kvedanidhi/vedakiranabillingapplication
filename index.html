@@ -22,7 +22,11 @@
  @media print {
  body * { visibility: hidden; }
  #receipt-print-area, #receipt-print-area * { visibility: visible; }
- #receipt-print-area { position: absolute; left: 0; top: 0; width: 100%; font-family: 'Courier New', Courier, monospace; font-size: 10px; }
+ #receipt-print-area { 
+    position: absolute; left: 0; top: 0; width: 100%; 
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
+    font-size: 11px; 
+ }
  @page { size: 80mm auto; margin: 2mm; }
  }
  #reader { width: 100%; border: 2px solid #e5e7eb; border-radius: 0.5rem; }
@@ -77,7 +81,13 @@
  <div id="camera-scanner-modal" class="modal-container modal-hidden fixed inset-0 bg-slate-900 bg-opacity-75 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div class="modal-box bg-white p-4 rounded-xl shadow-2xl w-full max-w-md mx-4"><h2 class="text-xl font-bold mb-4 text-slate-800">Scan Barcode</h2><div id="reader" class="mb-4"></div><button id="cancel-scan-btn" class="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-transform hover:scale-105 active:scale-95">Cancel</button></div></div>
  
  <div id="receipt-modal" class="modal-container modal-hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50 p-4"><div class="modal-box bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm"><div id="receipt-print-area" class="text-black text-xs"><div class="text-center mb-4"><h2 class="text-lg font-bold">VEDA KIRANA AND GENERAL STORE</h2><p>Ratna Complex, 509338</p><p>Phone: 8309913409</p><p id="receipt-date" class="mt-2 text-xs"></p><p id="receipt-customer" class="text-xs"></p></div><div class="border-t border-b border-dashed border-black my-2 py-2">
- <div class="grid grid-cols-12 gap-1 font-bold"><div class="col-span-4">Item</div><div class="col-span-2 text-right">Qty</div><div class="col-span-3 text-right">Price</div><div class="col-span-3 text-right">Total</div></div><div id="receipt-items" class="mt-1 space-y-1"></div></div><div class="space-y-1 mt-2 text-right"><p>Subtotal: <span id="receipt-subtotal" class="readable-num"></span></p><p>Discount: <span id="receipt-discount" class="readable-num"></span></p><p class="font-bold text-sm">TOTAL: <span id="receipt-total" class="readable-num"></span></p></div><div class="mt-4 text-center border-t border-dashed border-black pt-2"><p class="font-bold">THANK YOU!</p><p>Visit Again</p></div></div><div class="flex justify-end gap-4 mt-6"><button type="button" id="cancel-receipt-btn" class="bg-slate-200 text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-300">Cancel</button><button type="button" id="direct-print-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg transition-transform hover:scale-105 active:scale-95"><i class="fas fa-print mr-2"></i> Direct Bluetooth Print</button></div></div></div>
+ <div class="grid grid-cols-12 gap-1 font-bold">
+    <div class="col-span-4">Item</div>
+    <div class="col-span-1 text-right">Qty</div>
+    <div class="col-span-3 text-right">Price</div>
+    <div class="col-span-4 text-right">Total</div>
+ </div>
+ <div id="receipt-items" class="mt-1 space-y-1"></div></div><div class="space-y-1 mt-2 text-right"><p>Subtotal: <span id="receipt-subtotal" class="readable-num"></span></p><p>Discount: <span id="receipt-discount" class="readable-num"></span></p><p class="font-bold text-sm">TOTAL: <span id="receipt-total" class="readable-num"></span></p></div><div class="mt-4 text-center border-t border-dashed border-black pt-2"><p class="font-bold">THANK YOU!</p><p>Visit Again</p></div></div><div class="flex justify-end gap-4 mt-6"><button type="button" id="cancel-receipt-btn" class="bg-slate-200 text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-300">Cancel</button><button type="button" id="direct-print-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg transition-transform hover:scale-105 active:scale-95"><i class="fas fa-print mr-2"></i> Direct Bluetooth Print</button></div></div></div>
  
  <div id="ai-modal" class="modal-container modal-hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50 p-4"><div class="modal-box bg-white p-8 rounded-xl shadow-2xl w-full max-w-2xl"><h2 id="ai-modal-title" class="text-2xl font-bold mb-4 text-slate-800">AI Analysis</h2><div id="ai-modal-content" class="bg-slate-100 p-4 rounded-lg max-h-96 overflow-y-auto prose"></div><div class="flex justify-end mt-6"><button id="close-ai-modal" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Close</button></div></div></div>
  <div id="history-detail-modal" class="modal-container modal-hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50 p-4"><div class="modal-box bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg"><h2 class="text-2xl font-bold mb-2 text-slate-800">Transaction Details</h2><div class="flex justify-between text-slate-600 mb-4 border-b pb-2"><p id="history-detail-customer"></p><p id="history-detail-date"></p></div><div class="max-h-80 overflow-y-auto"><table class="w-full text-left"><thead><tr class="bg-slate-50"><th class="p-2 font-semibold text-slate-600">Item</th><th class="p-2 font-semibold text-slate-600 text-center">Qty</th><th class="p-2 font-semibold text-slate-600">Price</th><th class="p-2 font-semibold text-green-600">Profit</th><th class="p-2 font-semibold text-slate-600 text-right">Total</th></tr></thead><tbody id="history-detail-items" class="divide-y divide-slate-200"></tbody></table></div><div class="flex justify-end mt-4 pt-4 border-t font-bold"><span class="text-lg text-slate-800">Total Profit For This Bill:</span><span id="history-detail-total-profit" class="text-lg ml-4 text-green-700 readable-num"></span></div><div class="flex justify-end mt-6"><button id="close-history-detail-modal" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Close</button></div></div></div>
@@ -385,13 +395,16 @@
  function showReceiptPreview() { 
     DOMElements.receiptDate.textContent = new Date().toLocaleString('en-IN'); 
     DOMElements.receiptCustomer.textContent = DOMElements.customerNameInput.value ? `Customer: ${DOMElements.customerNameInput.value}` : '';
-    DOMElements.receiptItems.innerHTML = currentBill.map(item => `
-        <div class="grid grid-cols-12 gap-1 border-b border-gray-50 pb-1">
-            <div class="col-span-4 truncate">${item.name}</div>
-            <div class="col-span-2 text-right readable-num">${item.quantity}</div>
+    DOMElements.receiptItems.innerHTML = currentBill.map(item => {
+        // Updated Preview Formatting to match new logic
+        const dispName = item.name.substring(0, 12).padEnd(12, '\u00A0');
+        return `
+        <div class="grid grid-cols-12 gap-1 border-b border-gray-50 pb-1 font-mono">
+            <div class="col-span-4 truncate">${dispName}</div>
+            <div class="col-span-1 text-right readable-num">${item.quantity}</div>
             <div class="col-span-3 text-right readable-num">${Math.round(item.price)}</div>
-            <div class="col-span-3 text-right readable-num">₹${Math.round(item.price * item.quantity)}</div>
-        </div>`).join(''); 
+            <div class="col-span-4 text-right readable-num">₹${Math.round(item.price * item.quantity)}</div>
+        </div>`}).join(''); 
     DOMElements.receiptSubtotal.textContent = DOMElements.billSubtotal.textContent; 
     DOMElements.receiptDiscount.textContent = DOMElements.billDiscount.textContent; 
     DOMElements.receiptTotal.textContent = DOMElements.billTotal.textContent; 
@@ -437,13 +450,15 @@
     if (!sale) return;
     DOMElements.receiptDate.textContent = new Date(sale.created_at).toLocaleString('en-IN');
     DOMElements.receiptCustomer.innerHTML = `Customer: ${sale.customer_name || 'N/A'}<br><span class="font-bold text-center block mt-1">*** DUPLICATE RECEIPT ***</span>`;
-    DOMElements.receiptItems.innerHTML = sale.items.map(item => `
-        <div class="grid grid-cols-12 gap-1 border-b border-gray-50 pb-1">
-            <div class="col-span-4 truncate">${item.name}</div>
-            <div class="col-span-2 text-right readable-num">${item.quantity}</div>
+    DOMElements.receiptItems.innerHTML = sale.items.map(item => {
+        const dName = item.name.substring(0, 12).padEnd(12, '\u00A0');
+        return `
+        <div class="grid grid-cols-12 gap-1 border-b border-gray-50 pb-1 font-mono">
+            <div class="col-span-4 truncate">${dName}</div>
+            <div class="col-span-1 text-right readable-num">${item.quantity}</div>
             <div class="col-span-3 text-right readable-num">${Math.round(item.price)}</div>
-            <div class="col-span-3 text-right readable-num">₹${Math.round(item.price * item.quantity)}</div>
-        </div>`).join('');
+            <div class="col-span-4 text-right readable-num">₹${Math.round(item.price * item.quantity)}</div>
+        </div>`}).join('');
     DOMElements.receiptSubtotal.textContent = `₹${sale.subtotal.toFixed(2)}`;
     DOMElements.receiptDiscount.textContent = `-₹${sale.discount.toFixed(2)}`;
     DOMElements.receiptTotal.textContent = `₹${sale.total.toFixed(2)}`;
@@ -484,7 +499,7 @@
  async function handleDirectPrint() {
     if (!printerCharacteristic) return alert("Connect printer first!");
     const encoder = new TextEncoder();
-    const init = [0x1B, 0x40], cut = [0x1D, 0x56, 0x41], center = [0x1B, 0x61, 0x01], boldOn = [0x1B, 0x45, 0x01], boldOff = [0x1B, 0x45, 0x00];
+    const init = [0x1B, 0x40], cut = [0x1D, 0x56, 0x41], center = [0x1B, 0x61, 0x01], left = [0x1B, 0x61, 0x00], boldOn = [0x1B, 0x45, 0x01], boldOff = [0x1B, 0x45, 0x00];
 
     const reprintDataRaw = DOMElements.directPrintBtn.dataset.reprintData;
     let dataToPrint;
@@ -502,33 +517,27 @@
         };
     }
 
-    const wrapItemName = (name, limit) => {
-        let lines = [];
-        for (let i = 0; i < name.length; i += limit) { lines.push(name.substring(i, i + limit)); }
-        return lines;
-    };
-
     let content = "\n";
     content += "VEDA KIRANA AND GENERAL STORE\nRatna Complex, 509338\nPhone: 8309913409\n\n";
     if (reprintDataRaw) content += "*** DUPLICATE RECEIPT ***\n\n";
-    content += "Item         Qty   Price   Total\n--------------------------------\n";
+    
+    // NEW ALIGNMENT: 12 (Name) + 3 (Qty) + 7 (Price) + 8 (Total) = 30 Total width
+    // This moves the Total column further left and away from the edge
+    content += "Item        Qty   Price   Total\n------------------------------\n";
     
     dataToPrint.items.forEach(item => {
-        let nameLines = wrapItemName(item.name, 12);
-        let qty = item.quantity.toString().padStart(3);
-        let pr = Math.round(item.price).toString().padStart(7);
-        let tot = Math.round(item.price * item.quantity).toString().padStart(8);
+        let name = item.name.substring(0, 12).padEnd(12);
+        let qty = item.quantity.toString().substring(0, 3).padStart(3);
+        let pr = Math.round(item.price).toString().substring(0, 7).padStart(7);
+        let tot = Math.round(item.price * item.quantity).toString().substring(0, 8).padStart(8);
         
-        content += `${nameLines[0].padEnd(12)} ${qty} ${pr} ${tot}\n`;
-        for(let i=1; i < nameLines.length; i++) {
-            content += `${nameLines[i]}\n`;
-        }
+        content += `${name}${qty}${pr}${tot}\n`;
     });
 
-    content += "--------------------------------\n";
-    content += `${dataToPrint.sub.padStart(32)}\n`;
-    content += `${dataToPrint.dis.padStart(32)}\n`;
-    content += `${dataToPrint.tot.padStart(32)}\n\n`;
+    content += "------------------------------\n";
+    content += `${dataToPrint.sub.padStart(30)}\n`;
+    content += `${dataToPrint.dis.padStart(30)}\n`;
+    content += `${dataToPrint.tot.padStart(30)}\n\n`;
     content += "THANK YOU!\nVisit Again\n\n\n\n";
 
     const fullBuffer = new Uint8Array([...init, ...center, ...boldOn, ...encoder.encode(content), ...cut]);
@@ -546,7 +555,7 @@
  DOMElements.addProductBtn.onclick = showAddProductModal;
  DOMElements.cancelAddProductModalBtn.onclick = hideAddProductModal;
  DOMElements.addProductForm.onsubmit = handleAddProductSubmit;
- DOMElements.newProductCategory.onchange = (e) => DOMElements.newProductWeightContainer.classList.remove('hidden');
+ DOMElements.newProductCategory.onchange = (e) => DOMElements.newProductWeightContainer.classList.toggle('hidden', e.target.value !== 'Kirana');
  DOMElements.receiveStockBtn.onclick = showReceiveStockModal;
  DOMElements.cancelReceiveStockModal.onclick = hideReceiveStockModal;
  DOMElements.productSearchInput.oninput = handleProductSearch; 
