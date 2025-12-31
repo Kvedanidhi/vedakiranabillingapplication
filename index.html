@@ -25,7 +25,7 @@
  #receipt-print-area { 
     position: absolute; left: 0; top: 0; width: 100%; 
     font-family: 'VT323', monospace; 
-    font-size: 14px; /* VT323 needs to be slightly larger to be clear */
+    font-size: 14px; 
  }
  @page { size: 80mm auto; margin: 2mm; }
  }
@@ -87,7 +87,7 @@
     <div class="col-span-3 text-right">Price</div>
     <div class="col-span-4 text-right">Total</div>
  </div>
- <div id="receipt-items" class="mt-1 space-y-1"></div></div><div class="space-y-1 mt-2 text-right"><p>Subtotal: <span id="receipt-subtotal" class="readable-num"></span></p><p>Discount: <span id="receipt-discount" class="readable-num"></span></p><p class="font-bold text-sm">TOTAL: <span id="receipt-total" class="readable-num"></span></p></div><div class="mt-4 text-center border-t border-dashed border-black pt-2"><p class="font-bold">THANK YOU!</p><p>Visit Again</p></div></div><div class="flex justify-end gap-4 mt-6"><button type="button" id="cancel-receipt-btn" class="bg-slate-200 text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-300">Cancel</button><button type="button" id="direct-print-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg transition-transform hover:scale-105 active:scale-95"><i class="fas fa-print mr-2"></i> Direct Bluetooth Print</button></div></div></div>
+ <div id="receipt-items" class="mt-1 space-y-1"></div></div><div class="space-y-1 mt-2 text-right"><p>Subtotal: <span id="receipt-subtotal" class="readable-num"></span></p><p>Discount: <span id="receipt-discount" class="readable-num"></span></p><p id="receipt-final-total-line" class="font-bold text-lg">TOTAL: <span id="receipt-total" class="readable-num"></span></p></div><div class="mt-4 text-center border-t border-dashed border-black pt-2"><p class="font-bold">THANK YOU!</p><p>Visit Again</p></div></div><div class="flex justify-end gap-4 mt-6"><button type="button" id="cancel-receipt-btn" class="bg-slate-200 text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-300">Cancel</button><button type="button" id="direct-print-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg transition-transform hover:scale-105 active:scale-95"><i class="fas fa-print mr-2"></i> Direct Bluetooth Print</button></div></div></div>
  
  <div id="ai-modal" class="modal-container modal-hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50 p-4"><div class="modal-box bg-white p-8 rounded-xl shadow-2xl w-full max-w-2xl"><h2 id="ai-modal-title" class="text-2xl font-bold mb-4 text-slate-800">AI Analysis</h2><div id="ai-modal-content" class="bg-slate-100 p-4 rounded-lg max-h-96 overflow-y-auto prose"></div><div class="flex justify-end mt-6"><button id="close-ai-modal" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Close</button></div></div></div>
  <div id="history-detail-modal" class="modal-container modal-hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50 p-4"><div class="modal-box bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg"><h2 class="text-2xl font-bold mb-2 text-slate-800">Transaction Details</h2><div class="flex justify-between text-slate-600 mb-4 border-b pb-2"><p id="history-detail-customer"></p><p id="history-detail-date"></p></div><div class="max-h-80 overflow-y-auto"><table class="w-full text-left"><thead><tr class="bg-slate-50"><th class="p-2 font-semibold text-slate-600">Item</th><th class="p-2 font-semibold text-slate-600 text-center">Qty</th><th class="p-2 font-semibold text-slate-600">Price</th><th class="p-2 font-semibold text-green-600">Profit</th><th class="p-2 font-semibold text-slate-600 text-right">Total</th></tr></thead><tbody id="history-detail-items" class="divide-y divide-slate-200"></tbody></table></div><div class="flex justify-end mt-4 pt-4 border-t font-bold"><span class="text-lg text-slate-800">Total Profit For This Bill:</span><span id="history-detail-total-profit" class="text-lg ml-4 text-green-700 readable-num"></span></div><div class="flex justify-end mt-6"><button id="close-history-detail-modal" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Close</button></div></div></div>
@@ -396,7 +396,7 @@
     DOMElements.receiptDate.textContent = new Date().toLocaleString('en-IN'); 
     DOMElements.receiptCustomer.textContent = DOMElements.customerNameInput.value ? `Customer: ${DOMElements.customerNameInput.value}` : '';
     DOMElements.receiptItems.innerHTML = currentBill.map(item => {
-        // Preview logic matches Wendy's Font Style (VT323)
+        // Preview layout aligned to 12-3-7-8 spacing
         const dispName = item.name.substring(0, 12).padEnd(12, '\u00A0');
         return `
         <div class="grid grid-cols-12 gap-1 border-b border-gray-50 pb-1 font-mono">
@@ -500,8 +500,10 @@
     if (!printerCharacteristic) return alert("Connect printer first!");
     const encoder = new TextEncoder();
     // Hardware Font Commands
-    const init = [0x1B, 0x40], cut = [0x1D, 0x56, 0x41], center = [0x1B, 0x61, 0x01], left = [0x1B, 0x61, 0x00], boldOn = [0x1B, 0x45, 0x01], boldOff = [0x1B, 0x45, 0x00];
-    const fontB = [0x1B, 0x4D, 0x01]; // THIS TRIGGER'S THE WENDY'S STYLE CONDENSED FONT
+    const init = [0x1B, 0x40], cut = [0x1D, 0x56, 0x41], center = [0x1B, 0x61, 0x01];
+    const boldOn = [0x1B, 0x45, 0x01], boldOff = [0x1B, 0x45, 0x00];
+    const fontB = [0x1B, 0x4D, 0x01]; // Trigger "Merchant" style font
+    const doubleSize = [0x1D, 0x21, 0x11], normalSize = [0x1D, 0x21, 0x00];
 
     const reprintDataRaw = DOMElements.directPrintBtn.dataset.reprintData;
     let dataToPrint;
@@ -519,29 +521,36 @@
         };
     }
 
-    let content = "\n";
-    content += "VEDA KIRANA AND GENERAL STORE\nRatna Complex, 509338\nPhone: 8309913409\n\n";
-    if (reprintDataRaw) content += "*** DUPLICATE RECEIPT ***\n\n";
-    
-    // Header for hardware font
-    content += "Item        Qty   Price   Total\n------------------------------\n";
+    // --- Part 1: Header & Itemized List ---
+    let contentPart1 = "\nVEDA KIRANA AND GENERAL STORE\nRatna Complex, 509338\nPhone: 8309913409\n\n";
+    if (reprintDataRaw) contentPart1 += "*** DUPLICATE RECEIPT ***\n\n";
+    contentPart1 += "Item        Qty   Price   Total\n------------------------------\n";
     
     dataToPrint.items.forEach(item => {
         let name = item.name.substring(0, 12).padEnd(12);
         let qty = item.quantity.toString().substring(0, 3).padStart(3);
         let pr = Math.round(item.price).toString().substring(0, 7).padStart(7);
         let tot = Math.round(item.price * item.quantity).toString().substring(0, 8).padStart(8);
-        content += `${name}${qty}${pr}${tot}\n`;
+        contentPart1 += `${name}${qty}${pr}${tot}\n`;
     });
 
-    content += "------------------------------\n";
-    content += `${dataToPrint.sub.padStart(30)}\n`;
-    content += `${dataToPrint.dis.padStart(30)}\n`;
-    content += `${dataToPrint.tot.padStart(30)}\n\n`;
-    content += "THANK YOU!\nVisit Again\n\n\n\n";
+    contentPart1 += "------------------------------\n";
+    contentPart1 += `${dataToPrint.sub.padStart(30)}\n`;
+    contentPart1 += `${dataToPrint.dis.padStart(30)}\n`;
 
-    // Inject FontB command before content
-    const fullBuffer = new Uint8Array([...init, ...center, ...fontB, ...boldOn, ...encoder.encode(content), ...cut]);
+    // --- Part 2: TOTAL Line (Large & Bold) ---
+    let totalLineContent = `${dataToPrint.tot.padStart(15)}\n`; 
+
+    // --- Part 3: Footer & Paper Feed ---
+    let contentPart3 = "\nTHANK YOU!\nVisit Again\n\n\n\n";
+
+    // Build the instruction buffer
+    const buffer1 = new Uint8Array([...init, ...center, ...fontB, ...encoder.encode(contentPart1)]);
+    const buffer2 = new Uint8Array([...boldOn, ...doubleSize, ...encoder.encode(totalLineContent)]);
+    const buffer3 = new Uint8Array([...boldOff, ...normalSize, ...encoder.encode(contentPart3), ...cut]);
+
+    const fullBuffer = new Uint8Array([...buffer1, ...buffer2, ...buffer3]);
+
     for (let i = 0; i < fullBuffer.length; i += 20) {
         await printerCharacteristic.writeValue(fullBuffer.slice(i, i + 20));
     }
