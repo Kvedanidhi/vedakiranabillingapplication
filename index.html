@@ -7,7 +7,7 @@
  <script src="https://cdn.tailwindcss.com"></script>
  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
- <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+ <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
  <style>
  .view { display: none; }
@@ -17,15 +17,15 @@
  .modal-container.modal-hidden { opacity: 0; pointer-events: none; }
  .modal-box { transition: transform 0.2s ease-in-out; }
  .modal-container.modal-hidden .modal-box { transform: scale(0.95) translateY(1rem); }
- .readable-num { font-family: 'Roboto Mono', monospace !important; font-weight: 500; }
+ .readable-num { font-family: 'VT323', monospace !important; font-size: 1.2rem; }
  button:disabled { opacity: 0.6; cursor: not-allowed; }
  @media print {
  body * { visibility: hidden; }
  #receipt-print-area, #receipt-print-area * { visibility: visible; }
  #receipt-print-area { 
     position: absolute; left: 0; top: 0; width: 100%; 
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
-    font-size: 11px; 
+    font-family: 'VT323', monospace; 
+    font-size: 14px; /* VT323 needs to be slightly larger to be clear */
  }
  @page { size: 80mm auto; margin: 2mm; }
  }
@@ -81,7 +81,7 @@
  <div id="camera-scanner-modal" class="modal-container modal-hidden fixed inset-0 bg-slate-900 bg-opacity-75 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div class="modal-box bg-white p-4 rounded-xl shadow-2xl w-full max-w-md mx-4"><h2 class="text-xl font-bold mb-4 text-slate-800">Scan Barcode</h2><div id="reader" class="mb-4"></div><button id="cancel-scan-btn" class="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-transform hover:scale-105 active:scale-95">Cancel</button></div></div>
  
  <div id="receipt-modal" class="modal-container modal-hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50 p-4"><div class="modal-box bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm"><div id="receipt-print-area" class="text-black text-xs"><div class="text-center mb-4"><h2 class="text-lg font-bold">VEDA KIRANA AND GENERAL STORE</h2><p>Ratna Complex, 509338</p><p>Phone: 8309913409</p><p id="receipt-date" class="mt-2 text-xs"></p><p id="receipt-customer" class="text-xs"></p></div><div class="border-t border-b border-dashed border-black my-2 py-2">
- <div class="grid grid-cols-12 gap-1 font-bold">
+ <div class="grid grid-cols-12 gap-1 font-bold font-mono">
     <div class="col-span-4">Item</div>
     <div class="col-span-1 text-right">Qty</div>
     <div class="col-span-3 text-right">Price</div>
@@ -396,7 +396,7 @@
     DOMElements.receiptDate.textContent = new Date().toLocaleString('en-IN'); 
     DOMElements.receiptCustomer.textContent = DOMElements.customerNameInput.value ? `Customer: ${DOMElements.customerNameInput.value}` : '';
     DOMElements.receiptItems.innerHTML = currentBill.map(item => {
-        // Updated Preview Formatting to match new logic
+        // Preview logic matches Wendy's Font Style (VT323)
         const dispName = item.name.substring(0, 12).padEnd(12, '\u00A0');
         return `
         <div class="grid grid-cols-12 gap-1 border-b border-gray-50 pb-1 font-mono">
@@ -499,7 +499,9 @@
  async function handleDirectPrint() {
     if (!printerCharacteristic) return alert("Connect printer first!");
     const encoder = new TextEncoder();
+    // Hardware Font Commands
     const init = [0x1B, 0x40], cut = [0x1D, 0x56, 0x41], center = [0x1B, 0x61, 0x01], left = [0x1B, 0x61, 0x00], boldOn = [0x1B, 0x45, 0x01], boldOff = [0x1B, 0x45, 0x00];
+    const fontB = [0x1B, 0x4D, 0x01]; // THIS TRIGGER'S THE WENDY'S STYLE CONDENSED FONT
 
     const reprintDataRaw = DOMElements.directPrintBtn.dataset.reprintData;
     let dataToPrint;
@@ -521,8 +523,7 @@
     content += "VEDA KIRANA AND GENERAL STORE\nRatna Complex, 509338\nPhone: 8309913409\n\n";
     if (reprintDataRaw) content += "*** DUPLICATE RECEIPT ***\n\n";
     
-    // NEW ALIGNMENT: 12 (Name) + 3 (Qty) + 7 (Price) + 8 (Total) = 30 Total width
-    // This moves the Total column further left and away from the edge
+    // Header for hardware font
     content += "Item        Qty   Price   Total\n------------------------------\n";
     
     dataToPrint.items.forEach(item => {
@@ -530,7 +531,6 @@
         let qty = item.quantity.toString().substring(0, 3).padStart(3);
         let pr = Math.round(item.price).toString().substring(0, 7).padStart(7);
         let tot = Math.round(item.price * item.quantity).toString().substring(0, 8).padStart(8);
-        
         content += `${name}${qty}${pr}${tot}\n`;
     });
 
@@ -540,7 +540,8 @@
     content += `${dataToPrint.tot.padStart(30)}\n\n`;
     content += "THANK YOU!\nVisit Again\n\n\n\n";
 
-    const fullBuffer = new Uint8Array([...init, ...center, ...boldOn, ...encoder.encode(content), ...cut]);
+    // Inject FontB command before content
+    const fullBuffer = new Uint8Array([...init, ...center, ...fontB, ...boldOn, ...encoder.encode(content), ...cut]);
     for (let i = 0; i < fullBuffer.length; i += 20) {
         await printerCharacteristic.writeValue(fullBuffer.slice(i, i + 20));
     }
