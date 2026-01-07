@@ -948,11 +948,24 @@
       async function handleDirectPrint() {
          if (!printerCharacteristic) return alert("Connect printer first!");
          const encoder = new TextEncoder();
-         // Hardware Font Commands
-         const init = [0x1B, 0x40], cut = [0x1D, 0x56, 0x41], center = [0x1B, 0x61, 0x01];
-         const boldOn = [0x1B, 0x45, 0x01], boldOff = [0x1B, 0x45, 0x00];
-         const fontA = [0x1B, 0x4D, 0x00]; // Font A - wider, clearer characters (like classic receipts)
-         const doubleSize = [0x1D, 0x21, 0x11], normalSize = [0x1D, 0x21, 0x00];
+
+         // ESC/POS Commands for Shreyans P58 - optimized for clear numbers
+         const init = [0x1B, 0x40];  // Initialize printer
+         const cut = [0x1D, 0x56, 0x41];  // Paper cut
+         const center = [0x1B, 0x61, 0x01];  // Center align
+         const left = [0x1B, 0x61, 0x00];  // Left align
+
+         // Font and clarity settings
+         const fontA = [0x1B, 0x4D, 0x00];  // Font A (12x24, clearer)
+         const charSpacing = [0x1B, 0x20, 0x01];  // Add 1 dot spacing between chars
+         const emphasized = [0x1B, 0x45, 0x01];  // Emphasized/Bold ON
+         const emphasizedOff = [0x1B, 0x45, 0x00];  // Emphasized OFF
+         const doubleStrike = [0x1B, 0x47, 0x01];  // Double-strike ON (thicker print)
+         const doubleStrikeOff = [0x1B, 0x47, 0x00];  // Double-strike OFF
+
+         // Size commands
+         const doubleSize = [0x1D, 0x21, 0x11];  // Double width+height
+         const normalSize = [0x1D, 0x21, 0x00];  // Normal size
 
          const reprintDataRaw = DOMElements.directPrintBtn.dataset.reprintData;
          let dataToPrint;
@@ -970,35 +983,62 @@
             };
          }
 
-         // --- Part 1: Header & Itemized List (58mm = 32 chars max with Font A) ---
-         let contentPart1 = "\nVEDA KIRANA & GENERAL STORE\nRatna Complex, 509338\nPh: 8309913409\n\n";
-         if (reprintDataRaw) contentPart1 += "** DUPLICATE RECEIPT **\n\n";
-         contentPart1 += "Item       Qty  Price  Total\n--------------------------------\n";
+         // --- Part 1: Header (centered, emphasized) ---
+         let header = "\nVEDA KIRANA & GENERAL STORE\nRatna Complex, 509338\nPh: 8309913409\n\n";
+         if (reprintDataRaw) header += "** DUPLICATE RECEIPT **\n\n";
 
+         // --- Part 2: Items (left aligned with double-strike for clarity) ---
+         let items = "Item       Qty  Price  Total\n--------------------------------\n";
          dataToPrint.items.forEach(item => {
             let name = item.name.substring(0, 10).padEnd(10);
             let qty = item.quantity.toString().substring(0, 4).padStart(4);
             let pr = Math.round(item.price).toString().substring(0, 6).padStart(6);
             let tot = Math.round(item.price * item.quantity).toString().substring(0, 7).padStart(7);
-            contentPart1 += `${name}${qty}${pr}${tot}\n`;
+            items += `${name}${qty}${pr}${tot}\n`;
          });
+         items += "--------------------------------\n";
+         items += `${dataToPrint.sub.padStart(32)}\n`;
+         items += `${dataToPrint.dis.padStart(32)}\n`;
 
-         contentPart1 += "--------------------------------\n";
-         contentPart1 += `${dataToPrint.sub.padStart(32)}\n`;
-         contentPart1 += `${dataToPrint.dis.padStart(32)}\n`;
+         // --- Part 3: TOTAL Line (Large & Bold) ---
+         let totalLine = `${dataToPrint.tot.padStart(15)}\n`;
 
-         // --- Part 2: TOTAL Line (Large & Bold) ---
-         let totalLineContent = `${dataToPrint.tot.padStart(15)}\n`;
+         // --- Part 4: Footer ---
+         let footer = "\nTHANK YOU!\nVisit Again\n\n\n\n";
 
-         // --- Part 3: Footer & Paper Feed ---
-         let contentPart3 = "\nTHANK YOU!\nVisit Again\n\n\n\n";
+         // Build command buffer with all clarity enhancements
+         const buffer1 = new Uint8Array([
+            ...init,           // Reset printer
+            ...fontA,          // Use Font A
+            ...charSpacing,    // Add character spacing
+            ...doubleStrike,   // Enable double-strike for thicker lines
+            ...center,         // Center align
+            ...emphasized,     // Bold header
+            ...encoder.encode(header)
+         ]);
 
-         // Build the instruction buffer
-         const buffer1 = new Uint8Array([...init, ...center, ...fontA, ...encoder.encode(contentPart1)]);
-         const buffer2 = new Uint8Array([...boldOn, ...doubleSize, ...encoder.encode(totalLineContent)]);
-         const buffer3 = new Uint8Array([...boldOff, ...normalSize, ...encoder.encode(contentPart3), ...cut]);
+         const buffer2 = new Uint8Array([
+            ...emphasizedOff,  // Turn off bold for items
+            ...left,           // Left align for items
+            ...encoder.encode(items)
+         ]);
 
-         const fullBuffer = new Uint8Array([...buffer1, ...buffer2, ...buffer3]);
+         const buffer3 = new Uint8Array([
+            ...center,         // Center for total
+            ...emphasized,     // Bold
+            ...doubleSize,     // Large text
+            ...encoder.encode(totalLine)
+         ]);
+
+         const buffer4 = new Uint8Array([
+            ...normalSize,     // Normal size
+            ...emphasizedOff,  // Bold off
+            ...doubleStrikeOff, // Double-strike off
+            ...encoder.encode(footer),
+            ...cut             // Cut paper
+         ]);
+
+         const fullBuffer = new Uint8Array([...buffer1, ...buffer2, ...buffer3, ...buffer4]);
 
          for (let i = 0; i < fullBuffer.length; i += 20) {
             await printerCharacteristic.writeValue(fullBuffer.slice(i, i + 20));
