@@ -395,6 +395,15 @@
             <div id="batch-details-fields" class="hidden pt-4 border-t space-y-3">
                <h3 class="text-lg font-semibold text-slate-800">Adding Batch to: <span id="selected-product-name"
                      class="text-indigo-600"></span></h3>
+               <!-- Name change option -->
+               <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                     <input type="checkbox" id="change-product-name-check" class="w-4 h-4">
+                     <span class="text-sm text-yellow-800 font-medium">Change product name (keeps same barcode)</span>
+                  </label>
+                  <input type="text" id="new-product-name-input" placeholder="Enter new product name..."
+                     class="w-full p-2 border border-slate-300 rounded-lg mt-2 hidden">
+               </div>
                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div><label class="block font-medium text-slate-700">Quantity Received</label><input type="number"
                         id="batch-quantity" placeholder="e.g., 50" required
@@ -610,6 +619,8 @@
          unitWeightKg: document.getElementById('unit-weight-kg'),
          runConversionBtn: document.getElementById('run-conversion-btn'),
          cancelBulkBtn: document.getElementById('cancel-bulk-modal'),
+         changeProductNameCheck: document.getElementById('change-product-name-check'),
+         newProductNameInput: document.getElementById('new-product-name-input'),
       };
 
       DOMElements.addProductSubmitBtn = DOMElements.addProductForm.querySelector('button[type="submit"]');
@@ -735,20 +746,52 @@
          submitBtn.disabled = false;
       }
 
-      function showReceiveStockModal() { selectedProductForBatch = null; DOMElements.receiveStockForm.reset(); DOMElements.batchDetailsFields.classList.add('hidden'); showModal(DOMElements.receiveStockModal); DOMElements.productSearchInput.focus(); }
+      function showReceiveStockModal() {
+         selectedProductForBatch = null;
+         DOMElements.receiveStockForm.reset();
+         DOMElements.batchDetailsFields.classList.add('hidden');
+         DOMElements.changeProductNameCheck.checked = false;
+         DOMElements.newProductNameInput.classList.add('hidden');
+         DOMElements.newProductNameInput.value = '';
+         showModal(DOMElements.receiveStockModal);
+         DOMElements.productSearchInput.focus();
+      }
       function hideReceiveStockModal() { hideModal(DOMElements.receiveStockModal); }
+
+      // Checkbox handler for name change
+      DOMElements.changeProductNameCheck.onchange = (e) => {
+         DOMElements.newProductNameInput.classList.toggle('hidden', !e.target.checked);
+         if (e.target.checked && selectedProductForBatch) {
+            DOMElements.newProductNameInput.value = selectedProductForBatch.name;
+            DOMElements.newProductNameInput.focus();
+         }
+      };
       function handleProductSearch() { const term = DOMElements.productSearchInput.value.toLowerCase().trim(); if (term.length < 1) { DOMElements.productSearchResults.classList.add('hidden'); return; } const results = inventoryCache.filter(p => p.name.toLowerCase().includes(term) || (p.barcode && p.barcode.includes(term))); DOMElements.productSearchResults.innerHTML = ''; if (results.length > 0) { results.forEach(p => { const div = document.createElement('div'); div.className = 'p-2 hover:bg-gray-100 cursor-pointer border-b'; div.textContent = `${p.name} (Stock: ${p.totalStock})`; div.onclick = () => selectProductForBatch(p); DOMElements.productSearchResults.appendChild(div); }); DOMElements.productSearchResults.classList.remove('hidden'); } else { DOMElements.productSearchResults.classList.add('hidden'); } }
       function selectProductForBatch(product) { selectedProductForBatch = product; DOMElements.productSearchResults.classList.add('hidden'); DOMElements.productSearchInput.value = product.name; DOMElements.batchDetailsFields.classList.remove('hidden'); DOMElements.confirmBatchBtn.disabled = false; DOMElements.selectedProductName.textContent = product.name; DOMElements.batchQuantity.focus(); }
 
       async function handleReceiveStockSubmit(e) {
          e.preventDefault(); if (!selectedProductForBatch) return;
          const submitBtn = DOMElements.confirmBatchBtn; submitBtn.disabled = true;
-         const qty = parseInt(DOMElements.batchQuantity.value); const pPrice = parseFloat(DOMElements.batchPurchasePrice.value); const sPrice = parseFloat(DOMElements.batchSellingPrice.value);
+
+         // Check if name change is requested
+         if (DOMElements.changeProductNameCheck.checked) {
+            const newName = DOMElements.newProductNameInput.value.trim();
+            if (newName && newName !== selectedProductForBatch.name) {
+               const { error: nameError } = await db.from('products').update({ name: newName }).eq('id', selectedProductForBatch.id);
+               if (nameError) { alert('Error updating name: ' + nameError.message); submitBtn.disabled = false; return; }
+            }
+         }
+
+         const qty = parseInt(DOMElements.batchQuantity.value);
+         const pPrice = parseFloat(DOMElements.batchPurchasePrice.value);
+         const sPrice = parseFloat(DOMElements.batchSellingPrice.value);
          const batchData = { product_id: selectedProductForBatch.id, user_id: currentUser.id, quantity_received: qty, quantity_remaining: qty, purchase_price: pPrice, selling_price: sPrice, expiry_date: DOMElements.batchExpiryDate.value || null };
          const { data: newBatch, error } = await db.from('stock_batches').insert(batchData).select().single();
          if (!error) {
             await db.from('products').update({ latest_selling_price: sPrice }).eq('id', selectedProductForBatch.id);
             await loadInventory(); hideReceiveStockModal();
+         } else {
+            alert('Error adding batch: ' + error.message);
          }
          submitBtn.disabled = false;
       }
@@ -797,10 +840,40 @@
 
       function addProductToBill(product) {
          if (!product || product.totalStock <= 0) { alert('Out of stock.'); return; }
-         const oldestBatch = product.batches[0];
-         const existingItem = currentBill.find(item => item.batch_id === oldestBatch.id);
-         if (existingItem) { if (existingItem.quantity < oldestBatch.quantity_remaining) existingItem.quantity++; else alert('Batch limit reached.'); }
-         else { currentBill.push({ product_id: product.id, batch_id: oldestBatch.id, name: product.name, quantity: 1, price: oldestBatch.selling_price, purchase_price: oldestBatch.purchase_price, max_qty: oldestBatch.quantity_remaining, category: product.category }); }
+
+         // Calculate total qty already in bill for this product across all batches
+         const qtyInBill = currentBill.filter(i => i.product_id === product.id).reduce((sum, i) => sum + i.quantity, 0);
+         if (qtyInBill >= product.totalStock) { alert('No more stock available.'); return; }
+
+         // Find a batch with available qty (FIFO order)
+         let batchToUse = null;
+         for (const batch of product.batches) {
+            const usedFromBatch = currentBill.filter(i => i.batch_id === batch.id).reduce((sum, i) => sum + i.quantity, 0);
+            if (usedFromBatch < batch.quantity_remaining) {
+               batchToUse = batch;
+               break;
+            }
+         }
+
+         if (!batchToUse) { alert('No available batch.'); return; }
+
+         // Check if item with same batch already in bill
+         const existingItem = currentBill.find(item => item.batch_id === batchToUse.id);
+         if (existingItem) {
+            existingItem.quantity++;
+         } else {
+            // Add as new line (handles different prices from different batches)
+            currentBill.push({
+               product_id: product.id,
+               batch_id: batchToUse.id,
+               name: product.name,
+               quantity: 1,
+               price: batchToUse.selling_price,
+               purchase_price: batchToUse.purchase_price,
+               max_qty: batchToUse.quantity_remaining,
+               category: product.category
+            });
+         }
          renderBill();
       }
 
@@ -997,8 +1070,11 @@
             items += `${name}${qty}${pr}${tot}\n`;
          });
          items += "--------------------------------\n";
-         items += `${dataToPrint.sub.padStart(32)}\n`;
-         items += `${dataToPrint.dis.padStart(32)}\n`;
+         // Right align subtotal/discount without decimals
+         const subVal = Math.round(parseFloat(dataToPrint.sub.replace(/[^0-9.-]/g, '')));
+         const disVal = Math.round(parseFloat(dataToPrint.dis.replace(/[^0-9.-]/g, '')));
+         items += `Subtotal: ${subVal}`.padStart(32) + "\n";
+         items += `Discount: -${Math.abs(disVal)}`.padStart(32) + "\n";
 
          // --- Part 3: TOTAL Line (Large & Bold) ---
          let totalLine = `${dataToPrint.tot.padStart(15)}\n`;
@@ -1110,9 +1186,23 @@
       DOMElements.billItemsBody.onclick = (e) => {
          const row = e.target.closest('tr'); if (!row) return;
          const bid = row.dataset.batchId, item = currentBill.find(i => i.batch_id === bid);
-         if (e.target.classList.contains('plus-btn')) { if (item.quantity < item.max_qty) item.quantity++; else alert("Max stock reached"); }
-         if (e.target.classList.contains('minus-btn')) { if (item.quantity > 1) item.quantity--; else currentBill = currentBill.filter(i => i.batch_id !== bid); }
-         if (e.target.closest('.remove-item-btn')) { currentBill = currentBill.filter(i => i.batch_id !== bid); }
+         if (!item) return;
+
+         if (e.target.classList.contains('plus-btn')) {
+            // Find the product and try to add more (handles multi-batch)
+            const product = inventoryCache.find(p => p.id === item.product_id);
+            if (product) {
+               addProductToBill(product);
+               return; // addProductToBill calls renderBill
+            }
+         }
+         if (e.target.classList.contains('minus-btn')) {
+            if (item.quantity > 1) item.quantity--;
+            else currentBill = currentBill.filter(i => i.batch_id !== bid);
+         }
+         if (e.target.closest('.remove-item-btn')) {
+            currentBill = currentBill.filter(i => i.batch_id !== bid);
+         }
          renderBill();
       };
    </script>
