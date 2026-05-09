@@ -11,6 +11,32 @@
    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
    <style>
+      /* Base Theme */
+      :root {
+         --bg-primary: #0f172a;
+         --bg-secondary: #1e293b;
+         --bg-card: rgba(30, 41, 59, 0.8);
+         --text-primary: #f8fafc;
+         --text-secondary: #94a3b8;
+         --accent-blue: #3b82f6;
+         --accent-green: #22c55e;
+         --accent-red: #ef4444;
+         --accent-yellow: #eab308;
+         --glass-bg: rgba(255, 255, 255, 0.05);
+         --glass-border: rgba(255, 255, 255, 0.1);
+      }
+
+      * {
+         box-sizing: border-box;
+      }
+
+      body {
+         background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+         color: var(--text-primary);
+         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+         min-height: 100vh;
+      }
+
       .view {
          display: none;
       }
@@ -19,11 +45,60 @@
          display: block;
       }
 
-      .nav-link.active {
-         background-color: #374151;
-         color: white;
+      /* Glassmorphism Card */
+      .glass-card {
+         background: var(--glass-bg);
+         backdrop-filter: blur(12px);
+         -webkit-backdrop-filter: blur(12px);
+         border: 1px solid var(--glass-border);
+         border-radius: 16px;
       }
 
+      /* Gradient Cards */
+      .gradient-blue {
+         background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+      }
+
+      .gradient-purple {
+         background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+      }
+
+      .gradient-orange {
+         background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+      }
+
+      .gradient-red {
+         background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+      }
+
+      .gradient-green {
+         background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+      }
+
+      /* Sidebar Styling */
+      .sidebar {
+         background: var(--bg-secondary);
+         border-right: 1px solid var(--glass-border);
+      }
+
+      .nav-link {
+         color: var(--text-secondary);
+         transition: all 0.2s ease;
+         border-radius: 12px;
+      }
+
+      .nav-link:hover {
+         background: rgba(255, 255, 255, 0.1);
+         color: var(--text-primary);
+      }
+
+      .nav-link.active {
+         background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+         color: white;
+         box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+      }
+
+      /* Modal Styling */
       .modal-container {
          transition: opacity 0.2s ease-in-out;
       }
@@ -35,22 +110,125 @@
 
       .modal-box {
          transition: transform 0.2s ease-in-out;
+         background: var(--bg-secondary);
+         border: 1px solid var(--glass-border);
+         border-radius: 20px;
       }
 
       .modal-container.modal-hidden .modal-box {
          transform: scale(0.95) translateY(1rem);
       }
 
+      /* Number Display */
       .readable-num {
          font-family: 'VT323', monospace !important;
-         font-size: 1.2rem;
+         font-size: 1.3rem;
+         letter-spacing: 1px;
+      }
+
+      /* Buttons */
+      .btn-primary {
+         background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+         color: white;
+         border-radius: 12px;
+         padding: 12px 24px;
+         font-weight: 600;
+         transition: all 0.2s ease;
+         box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+      }
+
+      .btn-primary:hover {
+         transform: translateY(-2px);
+         box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+      }
+
+      .btn-success {
+         background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+         color: white;
+         border-radius: 12px;
+         padding: 12px 24px;
+         font-weight: 600;
+         box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+      }
+
+      .btn-danger {
+         background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+         color: white;
+         border-radius: 12px;
+         padding: 12px 24px;
+         font-weight: 600;
       }
 
       button:disabled {
-         opacity: 0.6;
+         opacity: 0.5;
          cursor: not-allowed;
       }
 
+      /* Input Styling */
+      input,
+      select {
+         background: var(--bg-primary);
+         border: 1px solid var(--glass-border);
+         color: var(--text-primary);
+         border-radius: 10px;
+         padding: 12px 16px;
+      }
+
+      input:focus,
+      select:focus {
+         outline: none;
+         border-color: var(--accent-blue);
+         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+      }
+
+      input::placeholder {
+         color: var(--text-secondary);
+      }
+
+      /* Tables */
+      .data-table {
+         background: var(--glass-bg);
+         border-radius: 16px;
+         overflow: hidden;
+      }
+
+      .data-table th {
+         background: rgba(0, 0, 0, 0.2);
+         color: var(--text-secondary);
+         font-weight: 600;
+         text-transform: uppercase;
+         font-size: 0.75rem;
+         letter-spacing: 0.5px;
+      }
+
+      .data-table td {
+         border-bottom: 1px solid var(--glass-border);
+      }
+
+      .data-table tr:hover td {
+         background: rgba(255, 255, 255, 0.03);
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+         width: 8px;
+         height: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+         background: var(--bg-primary);
+      }
+
+      ::-webkit-scrollbar-thumb {
+         background: var(--glass-border);
+         border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+         background: var(--text-secondary);
+      }
+
+      /* Print Styles */
       @media print {
          body * {
             visibility: hidden;
@@ -68,6 +246,8 @@
             width: 100%;
             font-family: 'VT323', monospace;
             font-size: 14px;
+            color: black;
+            background: white;
          }
 
          @page {
@@ -76,10 +256,105 @@
          }
       }
 
+      /* Responsive */
+      @media (max-width: 1024px) {
+         .sidebar {
+            width: 80px !important;
+         }
+
+         .sidebar .nav-text {
+            display: none;
+         }
+
+         .sidebar .nav-link {
+            justify-content: center;
+            padding: 16px;
+         }
+
+         .sidebar .nav-link i {
+            margin: 0;
+            font-size: 1.25rem;
+         }
+
+         .sidebar .sidebar-header {
+            padding: 16px 8px;
+         }
+
+         .sidebar .sidebar-title {
+            display: none;
+         }
+      }
+
+      @media (max-width: 768px) {
+         .sidebar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100% !important;
+            height: 70px;
+            flex-direction: row !important;
+            z-index: 50;
+            border-right: none;
+            border-top: 1px solid var(--glass-border);
+         }
+
+         .sidebar nav {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            justify-content: space-around;
+            padding: 0 !important;
+         }
+
+         .sidebar .nav-link {
+            flex-direction: column;
+            padding: 8px !important;
+            font-size: 0.7rem;
+            gap: 4px;
+         }
+
+         .sidebar .sidebar-header,
+         .sidebar .sidebar-footer {
+            display: none;
+         }
+
+         .main-content {
+            padding-bottom: 80px !important;
+         }
+
+         .dashboard-grid {
+            grid-template-columns: 1fr 1fr !important;
+         }
+      }
+
+      @media (max-width: 480px) {
+         .dashboard-grid {
+            grid-template-columns: 1fr !important;
+         }
+      }
+
       #reader {
          width: 100%;
-         border: 2px solid #e5e7eb;
-         border-radius: 0.5rem;
+         border: 2px solid var(--glass-border);
+         border-radius: 12px;
+      }
+
+      /* Animations */
+      @keyframes fadeIn {
+         from {
+            opacity: 0;
+            transform: translateY(10px);
+         }
+
+         to {
+            opacity: 1;
+            transform: translateY(0);
+         }
+      }
+
+      .animate-fade-in {
+         animation: fadeIn 0.3s ease-out;
       }
    </style>
 </head>
@@ -113,10 +388,10 @@
       </div>
    </div>
    <div id="app-screen" class="hidden">
-      <div class="flex h-screen bg-slate-100">
-         <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col">
-            <div class="p-4 border-b border-slate-800 text-center">
-               <h1 class="text-2xl font-bold text-white">Veda Kirana</h1>
+      <div class="flex h-screen">
+         <aside class="sidebar w-64 flex flex-col">
+            <div class="sidebar-header p-4 border-b border-white/10 text-center">
+               <h1 class="sidebar-title text-xl font-bold text-white">Veda Kirana</h1>
             </div>
             <nav class="flex-1 p-2 space-y-2"><a data-view="dashboard"
                   class="nav-link active flex items-center p-3 rounded-lg transition-colors duration-200 hover:bg-slate-800 hover:text-white cursor-pointer"><i
@@ -136,13 +411,13 @@
                      class="fas fa-sign-out-alt mr-2"></i> Logout</button></div>
          </aside>
          <main class="flex-1 p-6 overflow-y-auto">
-            <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex justify-between items-center">
-               <h2 id="welcome-message" class="text-xl font-semibold text-slate-700">Welcome back!</h2><button
-                  class="logout-button text-sm bg-slate-200 text-slate-700 px-3 py-1 rounded-md hover:bg-red-500 hover:text-white transition-colors duration-200"><i
+            <div class="glass-card p-4 mb-6 flex justify-between items-center animate-fade-in">
+               <h2 id="welcome-message" class="text-xl font-semibold text-white">Welcome back!</h2><button
+                  class="logout-button text-sm px-4 py-2 rounded-lg bg-white/10 hover:bg-red-500/80 text-white transition-colors"><i
                      class="fas fa-sign-out-alt mr-1"></i> Logout</button>
             </div>
             <section id="dashboard-view" class="view active-view">
-               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+               <div class="dashboard-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                   <div
                      class="p-6 rounded-xl shadow-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white transition-transform hover:-translate-y-1">
                      <h3 class="text-lg font-medium">Today's Sales</h3>
