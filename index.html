@@ -75,60 +75,58 @@
       </div>
    </div>
    <div id="app-screen" class="hidden">
-      <div class="flex h-screen">
-         <aside class="sidebar w-64 flex flex-col">
-            <div class="sidebar-header p-4 border-b border-white/10 text-center">
-               <h1 class="sidebar-title text-xl font-bold text-white">Veda Kirana</h1>
+      <div class="flex flex-col h-screen">
+         <header class="bg-white shadow-sm border-b border-slate-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+               <div class="flex justify-between h-16 items-center">
+                  <div class="flex items-center space-x-8">
+                     <h1 class="text-2xl font-bold text-indigo-600">Veda Kirana</h1>
+                     <nav class="hidden md:flex space-x-4">
+                        <a data-view="dashboard" class="nav-link active text-slate-600 hover:bg-slate-100 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium cursor-pointer"><i class="fas fa-chart-pie mr-2"></i>Dashboard</a>
+                        <a data-view="billing" class="nav-link text-slate-600 hover:bg-slate-100 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium cursor-pointer"><i class="fas fa-cash-register mr-2"></i>Billing</a>
+                        <a data-view="inventory" class="nav-link text-slate-600 hover:bg-slate-100 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium cursor-pointer"><i class="fas fa-boxes-stacked mr-2"></i>Inventory</a>
+                        <a data-view="history" class="nav-link text-slate-600 hover:bg-slate-100 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium cursor-pointer"><i class="fas fa-history mr-2"></i>History</a>
+                        <a data-view="reports" class="nav-link text-slate-600 hover:bg-slate-100 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium cursor-pointer"><i class="fas fa-chart-line mr-2"></i>Reports</a>
+                     </nav>
+                  </div>
+                  <div class="flex items-center space-x-4">
+                     <button id="connect-printer-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-transform hover:scale-105 flex items-center"><i class="fas fa-print mr-2"></i>Printer</button>
+                     <div class="border-l border-slate-200 h-6 mx-2"></div>
+                     <span id="welcome-message" class="text-sm font-medium text-slate-700">Welcome back!</span>
+                     <button class="logout-button ml-4 text-sm px-4 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"><i class="fas fa-sign-out-alt mr-1"></i> Logout</button>
+                  </div>
+               </div>
             </div>
-            <nav class="flex-1 p-2 space-y-2"><a data-view="dashboard"
-                  class="nav-link active flex items-center p-3 rounded-lg transition-colors duration-200 hover:bg-slate-800 hover:text-white cursor-pointer"><i
-                     class="fas fa-chart-pie mr-3 w-5 text-slate-400"></i> Dashboard</a><a data-view="billing"
-                  class="nav-link flex items-center p-3 rounded-lg transition-colors duration-200 hover:bg-slate-800 hover:text-white cursor-pointer"><i
-                     class="fas fa-cash-register mr-3 w-5 text-slate-400"></i> Billing</a><a data-view="inventory"
-                  class="nav-link flex items-center p-3 rounded-lg transition-colors duration-200 hover:bg-slate-800 hover:text-white cursor-pointer"><i
-                     class="fas fa-boxes-stacked mr-3 w-5 text-slate-400"></i> Inventory</a><a data-view="history"
-                  class="nav-link flex items-center p-3 rounded-lg transition-colors duration-200 hover:bg-slate-800 hover:text-white cursor-pointer"><i
-                     class="fas fa-history mr-3 w-5 text-slate-400"></i> Past History</a><a data-view="reports"
-                  class="nav-link flex items-center p-3 rounded-lg transition-colors duration-200 hover:bg-slate-800 hover:text-white cursor-pointer"><i
-                     class="fas fa-chart-line mr-3 w-5 text-slate-400"></i> Reports</a></nav>
-            <div class="p-4 border-t border-slate-800 space-y-2"><button id="connect-printer-btn"
-                  class="w-full bg-blue-600 text-white py-2 rounded-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center"><i
-                     class="fas fa-print mr-2"></i> Connect Printer</button><button
-                  class="logout-button w-full bg-red-600 text-white py-2 rounded-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center"><i
-                     class="fas fa-sign-out-alt mr-2"></i> Logout</button></div>
-         </aside>
-         <main class="flex-1 p-6 overflow-y-auto">
-            <div class="glass-card p-4 mb-6 flex justify-between items-center animate-fade-in">
-               <h2 id="welcome-message" class="text-xl font-semibold text-white">Welcome back!</h2><button
-                  class="logout-button text-sm px-4 py-2 rounded-lg bg-white/10 hover:bg-red-500/80 text-white transition-colors"><i
-                     class="fas fa-sign-out-alt mr-1"></i> Logout</button>
-            </div>
+            <!-- Mobile nav container -->
+            <nav class="md:hidden flex overflow-x-auto space-x-2 p-2 border-t border-slate-100">
+               <a data-view="dashboard" class="nav-link active whitespace-nowrap text-slate-600 hover:bg-slate-100 px-3 py-2 rounded-md text-sm font-medium cursor-pointer">Dashboard</a>
+               <a data-view="billing" class="nav-link whitespace-nowrap text-slate-600 hover:bg-slate-100 px-3 py-2 rounded-md text-sm font-medium cursor-pointer">Billing</a>
+               <a data-view="inventory" class="nav-link whitespace-nowrap text-slate-600 hover:bg-slate-100 px-3 py-2 rounded-md text-sm font-medium cursor-pointer">Inventory</a>
+               <a data-view="history" class="nav-link whitespace-nowrap text-slate-600 hover:bg-slate-100 px-3 py-2 rounded-md text-sm font-medium cursor-pointer">History</a>
+               <a data-view="reports" class="nav-link whitespace-nowrap text-slate-600 hover:bg-slate-100 px-3 py-2 rounded-md text-sm font-medium cursor-pointer">Reports</a>
+            </nav>
+         </header>
+         <main class="flex-1 max-w-7xl w-full mx-auto p-6 overflow-y-auto">
             <section id="dashboard-view" class="view active-view">
                <div class="dashboard-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                  <div
-                     class="p-6 rounded-xl shadow-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white transition-transform hover:-translate-y-1">
+                  <div class="p-6 rounded-xl shadow-sm bg-blue-500 text-white transition-transform hover:-translate-y-1">
                      <h3 class="text-lg font-medium">Today's Sales</h3>
                      <p id="total-sales" class="text-4xl font-bold readable-num">₹0.00</p>
                   </div>
-                  <div
-                     class="p-6 rounded-xl shadow-lg bg-gradient-to-br from-indigo-500 to-purple-600 text-white transition-transform hover:-translate-y-1">
+                  <div class="p-6 rounded-xl shadow-sm bg-indigo-400 text-white transition-transform hover:-translate-y-1">
                      <h3 class="text-lg font-medium">Today's Bills</h3>
                      <p id="total-transactions" class="text-4xl font-bold readable-num">0</p>
                   </div>
-                  <div id="low-stock-card"
-                     class="p-6 rounded-xl shadow-lg bg-gradient-to-br from-yellow-400 to-orange-500 text-white transition-transform hover:-translate-y-1 cursor-pointer">
+                  <div id="low-stock-card" class="p-6 rounded-xl shadow-sm bg-orange-400 text-white transition-transform hover:-translate-y-1 cursor-pointer">
                      <h3 class="text-lg font-medium">Low Stock Items (< 3)</h3>
-                           <p id="low-stock-items" class="text-4xl font-bold readable-num">0</p>
+                     <p id="low-stock-items" class="text-4xl font-bold readable-num">0</p>
                   </div>
-                  <div id="expiring-soon-card"
-                     class="p-6 rounded-xl shadow-lg bg-gradient-to-br from-red-500 to-orange-600 text-white transition-transform hover:-translate-y-1 cursor-pointer">
+                  <div id="expiring-soon-card" class="p-6 rounded-xl shadow-sm bg-red-400 text-white transition-transform hover:-translate-y-1 cursor-pointer">
                      <h3 class="text-lg font-medium">Expiring Soon (30d)</h3>
                      <p id="expiring-soon-items" class="text-4xl font-bold readable-num">0</p>
                   </div>
                </div>
-               <div><button id="ai-summary-btn"
-                     class="bg-slate-800 text-white px-4 py-2 rounded-lg transition-transform hover:scale-105 active:scale-95 flex items-center"><i
-                        class="fas fa-robot mr-2"></i> Get AI Sales Summary</button></div>
+               <div><button id="ai-summary-btn" class="bg-slate-800 text-white px-4 py-2 rounded-lg transition-transform hover:scale-105 active:scale-95 flex items-center"><i class="fas fa-robot mr-2"></i> Get AI Sales Summary</button></div>
             </section>
             <section id="billing-view" class="view">
                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -635,7 +633,7 @@
       function showAppScreen() { DOMElements.authScreen.classList.add('hidden'); DOMElements.appScreen.classList.remove('hidden'); const displayName = currentUser.email.split('@')[0]; DOMElements.welcomeMessage.textContent = `Welcome back, ${displayName}!`; loadInventory(); loadSalesHistory(); }
       function showAuthScreen() { DOMElements.authScreen.classList.remove('hidden'); DOMElements.appScreen.classList.add('hidden'); }
 
-      function switchView(viewId, params = {}) { DOMElements.views.forEach(view => view.classList.remove('active-view')); document.getElementById(`${viewId}-view`).classList.add('active-view'); DOMElements.navLinks.forEach(link => { link.classList.remove('active', 'bg-slate-700', 'text-white'); if (link.dataset.view === viewId) link.classList.add('active', 'bg-slate-700', 'text-white'); }); if (viewId === 'billing') { setTimeout(() => DOMElements.barcodeSearchInput.focus(), 0); } if (viewId === 'inventory') { renderInventoryTable(params); } if (viewId === 'history') { loadSalesHistory(); } if (viewId === 'reports') { loadReportsData(); } }
+      function switchView(viewId, params = {}) { DOMElements.views.forEach(view => view.classList.remove('active-view')); document.getElementById(`${viewId}-view`).classList.add('active-view'); DOMElements.navLinks.forEach(link => { link.classList.remove('active', 'bg-indigo-50', 'text-indigo-600'); if (link.dataset.view === viewId) link.classList.add('active', 'bg-indigo-50', 'text-indigo-600'); }); if (viewId === 'billing') { setTimeout(() => DOMElements.barcodeSearchInput.focus(), 0); } if (viewId === 'inventory') { renderInventoryTable(params); } if (viewId === 'history') { loadSalesHistory(); } if (viewId === 'reports') { loadReportsData(); } }
 
       async function loadDashboardData() {
          const today = new Date(); today.setHours(0, 0, 0, 0); const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1); const { data: sales, error: salesError } = await db.from('sales').select('total').gte('created_at', today.toISOString()).lt('created_at', tomorrow.toISOString()); if (salesError) { console.error('Error fetching dashboard sales:', salesError); return; } const totalSales = sales.reduce((sum, sale) => sum + sale.total, 0); DOMElements.totalSales.textContent = `₹${totalSales.toFixed(2)}`; DOMElements.totalTransactions.textContent = sales.length;
