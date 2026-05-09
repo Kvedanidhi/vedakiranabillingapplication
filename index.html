@@ -461,8 +461,6 @@
             <div class="mt-4 text-center border-t-2 border-black border-dotted pt-2">
                <p class="font-bold font-sans">THANK YOU!</p>
                <p class="font-sans">Visit Again</p>
-               <p class="mt-3 tracking-[0.2em] font-bold">||||||||||||||||||||||</p>
-               <p class="text-[10px] mt-1">[ BARCODE HERE ]</p>
             </div>
          </div>
          <div class="flex justify-end gap-4 mt-6"><button type="button" id="cancel-receipt-btn"
@@ -996,14 +994,12 @@
 
          // Font and clarity settings
          const fontA = [0x1B, 0x4D, 0x00];  // Font A (12x24, clearer)
-         const charSpacing = [0x1B, 0x20, 0x01];  // Add 1 dot spacing between chars
+         const charSpacing = [0x1B, 0x20, 0x00];  // No extra character spacing
          const emphasized = [0x1B, 0x45, 0x01];  // Emphasized/Bold ON
          const emphasizedOff = [0x1B, 0x45, 0x00];  // Emphasized OFF
-         const doubleStrike = [0x1B, 0x47, 0x01];  // Double-strike ON (thicker print)
-         const doubleStrikeOff = [0x1B, 0x47, 0x00];  // Double-strike OFF
-
+         
          // Size commands
-         const doubleSize = [0x1D, 0x21, 0x11];  // Double width+height
+         const doubleSize = [0x1D, 0x21, 0x10];  // Double width only, normal height
          const normalSize = [0x1D, 0x21, 0x00];  // Normal size
 
          const reprintDataRaw = DOMElements.directPrintBtn.dataset.reprintData;
@@ -1036,24 +1032,23 @@
             items += `${name}${qty}${pr}${tot}\n`;
          });
          items += "********************************\n";
-         // Right align subtotal/discount without decimals
+         // Subtotal and discount aligned left and right perfectly
          const subVal = Math.round(parseFloat(dataToPrint.sub.replace(/[^0-9.-]/g, '')));
          const disVal = Math.round(parseFloat(dataToPrint.dis.replace(/[^0-9.-]/g, '')));
-         items += `Subtotal: ${subVal}`.padStart(32) + "\n";
-         items += `Discount: -${Math.abs(disVal)}`.padStart(32) + "\n";
+         items += "Subtotal:".padEnd(32 - String(subVal).length) + String(subVal) + "\n";
+         items += "Store Discount:".padEnd(32 - ("-" + Math.abs(disVal)).length) + "-" + Math.abs(disVal) + "\n";
 
          // --- Part 3: TOTAL Line (Large & Bold) ---
-         let totalLine = `${dataToPrint.tot.padStart(15)}\n`;
+         let totalLine = `${dataToPrint.tot}\n`;
 
          // --- Part 4: Footer ---
-         let footer = "\nTHANK YOU!\nVisit Again\n\n||||||||||||||||||||||\n[ BARCODE HERE ]\n\n\n";
+         let footer = "\nTHANK YOU!\nVisit Again\n\n\n\n";
 
          // Build command buffer with all clarity enhancements
          const buffer1 = new Uint8Array([
             ...init,           // Reset printer
             ...fontA,          // Use Font A
-            ...charSpacing,    // Add character spacing
-            ...doubleStrike,   // Enable double-strike for thicker lines
+            ...charSpacing,    // No extra character spacing
             ...center,         // Center align
             ...emphasized,     // Bold header
             ...encoder.encode(header)
@@ -1068,14 +1063,13 @@
          const buffer3 = new Uint8Array([
             ...center,         // Center for total
             ...emphasized,     // Bold
-            ...doubleSize,     // Large text
+            ...doubleSize,     // Double width text
             ...encoder.encode(totalLine)
          ]);
 
          const buffer4 = new Uint8Array([
             ...normalSize,     // Normal size
             ...emphasizedOff,  // Bold off
-            ...doubleStrikeOff, // Double-strike off
             ...encoder.encode(footer),
             ...cut             // Cut paper
          ]);
