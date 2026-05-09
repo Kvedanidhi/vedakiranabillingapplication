@@ -8,354 +8,41 @@
    <script src="https://cdn.tailwindcss.com"></script>
    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
    <style>
-      /* Base Theme */
-      :root {
-         --bg-primary: #0f172a;
-         --bg-secondary: #1e293b;
-         --bg-card: rgba(30, 41, 59, 0.8);
-         --text-primary: #f8fafc;
-         --text-secondary: #94a3b8;
-         --accent-blue: #3b82f6;
-         --accent-green: #22c55e;
-         --accent-red: #ef4444;
-         --accent-yellow: #eab308;
-         --glass-bg: rgba(255, 255, 255, 0.05);
-         --glass-border: rgba(255, 255, 255, 0.1);
-      }
-
-      * {
-         box-sizing: border-box;
-      }
-
       body {
-         background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-         color: var(--text-primary);
-         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+         background-color: #f8fafc;
+         color: #1e293b;
+         font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
          min-height: 100vh;
       }
-
-      .view {
-         display: none;
-      }
-
-      .active-view {
-         display: block;
-      }
-
-      /* Glassmorphism Card */
-      .glass-card {
-         background: var(--glass-bg);
-         backdrop-filter: blur(12px);
-         -webkit-backdrop-filter: blur(12px);
-         border: 1px solid var(--glass-border);
-         border-radius: 16px;
-      }
-
-      /* Gradient Cards */
-      .gradient-blue {
-         background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-      }
-
-      .gradient-purple {
-         background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
-      }
-
-      .gradient-orange {
-         background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
-      }
-
-      .gradient-red {
-         background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
-      }
-
-      .gradient-green {
-         background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
-      }
-
-      /* Sidebar Styling */
-      .sidebar {
-         background: var(--bg-secondary);
-         border-right: 1px solid var(--glass-border);
-      }
-
-      .nav-link {
-         color: var(--text-secondary);
-         transition: all 0.2s ease;
-         border-radius: 12px;
-      }
-
-      .nav-link:hover {
-         background: rgba(255, 255, 255, 0.1);
-         color: var(--text-primary);
+      .view { display: none; }
+      .active-view { display: block; }
+      
+      .readable-num {
+         font-variant-numeric: tabular-nums;
+         font-weight: normal;
       }
 
       .nav-link.active {
-         background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-         color: white;
-         box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
-      }
-
-      /* Modal Styling */
-      .modal-container {
-         transition: opacity 0.2s ease-in-out;
-      }
-
-      .modal-container.modal-hidden {
-         opacity: 0;
-         pointer-events: none;
-      }
-
-      .modal-box {
-         transition: transform 0.2s ease-in-out;
-         background: var(--bg-secondary);
-         border: 1px solid var(--glass-border);
-         border-radius: 20px;
-      }
-
-      .modal-container.modal-hidden .modal-box {
-         transform: scale(0.95) translateY(1rem);
-      }
-
-      /* Number Display */
-      .readable-num {
-         font-family: 'VT323', monospace !important;
-         font-size: 1.3rem;
-         letter-spacing: 1px;
-      }
-
-      /* Buttons */
-      .btn-primary {
-         background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-         color: white;
-         border-radius: 12px;
-         padding: 12px 24px;
-         font-weight: 600;
-         transition: all 0.2s ease;
-         box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-      }
-
-      .btn-primary:hover {
-         transform: translateY(-2px);
-         box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-      }
-
-      .btn-success {
-         background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
-         color: white;
-         border-radius: 12px;
-         padding: 12px 24px;
-         font-weight: 600;
-         box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
-      }
-
-      .btn-danger {
-         background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-         color: white;
-         border-radius: 12px;
-         padding: 12px 24px;
+         background-color: #e2e8f0;
+         color: #4f46e5;
          font-weight: 600;
       }
 
-      button:disabled {
-         opacity: 0.5;
-         cursor: not-allowed;
-      }
-
-      /* Input Styling */
-      input,
-      select {
-         background: var(--bg-primary);
-         border: 1px solid var(--glass-border);
-         color: var(--text-primary);
-         border-radius: 10px;
-         padding: 12px 16px;
-      }
-
-      input:focus,
-      select:focus {
-         outline: none;
-         border-color: var(--accent-blue);
-         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-      }
-
-      input::placeholder {
-         color: var(--text-secondary);
-      }
-
-      /* Tables */
-      .data-table {
-         background: var(--glass-bg);
-         border-radius: 16px;
-         overflow: hidden;
-      }
-
-      .data-table th {
-         background: rgba(0, 0, 0, 0.2);
-         color: var(--text-secondary);
-         font-weight: 600;
-         text-transform: uppercase;
-         font-size: 0.75rem;
-         letter-spacing: 0.5px;
-      }
-
-      .data-table td {
-         border-bottom: 1px solid var(--glass-border);
-      }
-
-      .data-table tr:hover td {
-         background: rgba(255, 255, 255, 0.03);
-      }
-
-      /* Scrollbar */
-      ::-webkit-scrollbar {
-         width: 8px;
-         height: 8px;
-      }
-
-      ::-webkit-scrollbar-track {
-         background: var(--bg-primary);
-      }
-
-      ::-webkit-scrollbar-thumb {
-         background: var(--glass-border);
-         border-radius: 4px;
-      }
-
-      ::-webkit-scrollbar-thumb:hover {
-         background: var(--text-secondary);
-      }
+      .modal-container { transition: opacity 0.2s ease-in-out; }
+      .modal-container.modal-hidden { opacity: 0; pointer-events: none; }
+      .modal-box { transition: transform 0.2s ease-in-out; }
+      .modal-container.modal-hidden .modal-box { transform: scale(0.95) translateY(1rem); }
 
       /* Print Styles */
       @media print {
-         body * {
-            visibility: hidden;
-         }
-
-         #receipt-print-area,
-         #receipt-print-area * {
-            visibility: visible;
-         }
-
-         #receipt-print-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            font-family: 'VT323', monospace;
-            font-size: 14px;
-            color: black;
-            background: white;
-         }
-
-         @page {
-            size: 80mm auto;
-            margin: 2mm;
-         }
+         body * { visibility: hidden; }
+         #receipt-print-area, #receipt-print-area * { visibility: visible; }
+         #receipt-print-area { position: absolute; left: 0; top: 0; width: 100%; font-family: monospace; font-size: 14px; color: black; background: white; }
+         @page { size: 58mm auto; margin: 2mm; }
       }
 
-      /* Responsive */
-      @media (max-width: 1024px) {
-         .sidebar {
-            width: 80px !important;
-         }
-
-         .sidebar .nav-text {
-            display: none;
-         }
-
-         .sidebar .nav-link {
-            justify-content: center;
-            padding: 16px;
-         }
-
-         .sidebar .nav-link i {
-            margin: 0;
-            font-size: 1.25rem;
-         }
-
-         .sidebar .sidebar-header {
-            padding: 16px 8px;
-         }
-
-         .sidebar .sidebar-title {
-            display: none;
-         }
-      }
-
-      @media (max-width: 768px) {
-         .sidebar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            width: 100% !important;
-            height: 70px;
-            flex-direction: row !important;
-            z-index: 50;
-            border-right: none;
-            border-top: 1px solid var(--glass-border);
-         }
-
-         .sidebar nav {
-            display: flex;
-            flex-direction: row;
-            width: 100%;
-            justify-content: space-around;
-            padding: 0 !important;
-         }
-
-         .sidebar .nav-link {
-            flex-direction: column;
-            padding: 8px !important;
-            font-size: 0.7rem;
-            gap: 4px;
-         }
-
-         .sidebar .sidebar-header,
-         .sidebar .sidebar-footer {
-            display: none;
-         }
-
-         .main-content {
-            padding-bottom: 80px !important;
-         }
-
-         .dashboard-grid {
-            grid-template-columns: 1fr 1fr !important;
-         }
-      }
-
-      @media (max-width: 480px) {
-         .dashboard-grid {
-            grid-template-columns: 1fr !important;
-         }
-      }
-
-      #reader {
-         width: 100%;
-         border: 2px solid var(--glass-border);
-         border-radius: 12px;
-      }
-
-      /* Animations */
-      @keyframes fadeIn {
-         from {
-            opacity: 0;
-            transform: translateY(10px);
-         }
-
-         to {
-            opacity: 1;
-            transform: translateY(0);
-         }
-      }
-
-      .animate-fade-in {
-         animation: fadeIn 0.3s ease-out;
-      }
+      #reader { width: 100%; border: 2px solid #e2e8f0; border-radius: 12px; }
    </style>
 </head>
 
@@ -748,16 +435,17 @@
    <div id="receipt-modal"
       class="modal-container modal-hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="modal-box bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm">
-         <div id="receipt-print-area" class="text-black text-xs">
+         <div id="receipt-print-area" class="text-black text-xs font-mono">
             <div class="text-center mb-4">
-               <h2 class="text-lg font-bold">VEDA KIRANA AND GENERAL STORE</h2>
+               <h2 class="text-lg font-bold font-sans">VEDA KIRANA & GENERAL STORE</h2>
                <p>Ratna Complex, 509338</p>
-               <p>Phone: 8309913409</p>
+               <p>Phone: 8308913409</p>
+               <p class="font-bold mt-2 text-sm font-sans">CASH RECEIPT</p>
                <p id="receipt-date" class="mt-2 text-xs"></p>
                <p id="receipt-customer" class="text-xs"></p>
             </div>
-            <div class="border-t border-b border-dashed border-black my-2 py-2">
-               <div class="grid grid-cols-12 gap-1 font-bold font-mono">
+            <div class="border-t-2 border-b-2 border-black my-2 py-2 border-dotted">
+               <div class="grid grid-cols-12 gap-1 font-bold">
                   <div class="col-span-4">Item</div>
                   <div class="col-span-1 text-right">Qty</div>
                   <div class="col-span-3 text-right">Price</div>
@@ -768,12 +456,13 @@
             <div class="space-y-1 mt-2 text-right">
                <p>Subtotal: <span id="receipt-subtotal" class="readable-num"></span></p>
                <p>Discount: <span id="receipt-discount" class="readable-num"></span></p>
-               <p id="receipt-final-total-line" class="font-bold text-lg">TOTAL: <span id="receipt-total"
-                     class="readable-num"></span></p>
+               <p id="receipt-final-total-line" class="font-bold text-lg mt-2">TOTAL: <span id="receipt-total" class="readable-num"></span></p>
             </div>
-            <div class="mt-4 text-center border-t border-dashed border-black pt-2">
-               <p class="font-bold">THANK YOU!</p>
-               <p>Visit Again</p>
+            <div class="mt-4 text-center border-t-2 border-black border-dotted pt-2">
+               <p class="font-bold font-sans">THANK YOU!</p>
+               <p class="font-sans">Visit Again</p>
+               <p class="mt-3 tracking-[0.2em] font-bold">||||||||||||||||||||||</p>
+               <p class="text-[10px] mt-1">[ BARCODE HERE ]</p>
             </div>
          </div>
          <div class="flex justify-end gap-4 mt-6"><button type="button" id="cancel-receipt-btn"
@@ -1202,8 +891,10 @@
             <div class="col-span-3 text-right readable-num">${Math.round(item.price)}</div>
             <div class="col-span-4 text-right readable-num">₹${Math.round(item.price * item.quantity)}</div>
         </div>`}).join('');
-         DOMElements.receiptSubtotal.textContent = DOMElements.billSubtotal.textContent;
-         DOMElements.receiptDiscount.textContent = DOMElements.billDiscount.textContent;
+         const subVal = Math.round(parseFloat(DOMElements.billSubtotal.textContent.replace(/[^0-9.-]/g, '')));
+         const disVal = Math.round(parseFloat(DOMElements.billDiscount.textContent.replace(/[^0-9.-]/g, '')));
+         DOMElements.receiptSubtotal.textContent = `₹${subVal}`;
+         DOMElements.receiptDiscount.textContent = `-₹${Math.abs(disVal)}`;
          DOMElements.receiptTotal.textContent = DOMElements.billTotal.textContent;
          DOMElements.directPrintBtn.dataset.reprintData = "";
          showModal(DOMElements.receiptModal);
@@ -1256,8 +947,8 @@
             <div class="col-span-3 text-right readable-num">${Math.round(item.price)}</div>
             <div class="col-span-4 text-right readable-num">₹${Math.round(item.price * item.quantity)}</div>
         </div>`}).join('');
-         DOMElements.receiptSubtotal.textContent = `₹${sale.subtotal.toFixed(2)}`;
-         DOMElements.receiptDiscount.textContent = `-₹${sale.discount.toFixed(2)}`;
+         DOMElements.receiptSubtotal.textContent = `₹${Math.round(sale.subtotal)}`;
+         DOMElements.receiptDiscount.textContent = `-₹${Math.round(sale.discount)}`;
          DOMElements.receiptTotal.textContent = `₹${sale.total.toFixed(2)}`;
          DOMElements.directPrintBtn.dataset.reprintData = JSON.stringify(sale);
          showModal(DOMElements.receiptModal);
@@ -1332,11 +1023,11 @@
          }
 
          // --- Part 1: Header (centered, emphasized) ---
-         let header = "\nVEDA KIRANA & GENERAL STORE\nRatna Complex, 509338\nPh: 8309913409\n\n";
-         if (reprintDataRaw) header += "** DUPLICATE RECEIPT **\n\n";
+         let header = "\nVEDA KIRANA & GENERAL STORE\nRatna Complex, 509338\nPh: 8308913409\n\nCASH RECEIPT\n";
+         if (reprintDataRaw) header += "** DUPLICATE **\n";
 
          // --- Part 2: Items (left aligned with double-strike for clarity) ---
-         let items = "Item       Qty  Price  Total\n--------------------------------\n";
+         let items = "********************************\nItem       Qty  Price  Total\n********************************\n";
          dataToPrint.items.forEach(item => {
             let name = item.name.substring(0, 10).padEnd(10);
             let qty = item.quantity.toString().substring(0, 4).padStart(4);
@@ -1344,7 +1035,7 @@
             let tot = Math.round(item.price * item.quantity).toString().substring(0, 7).padStart(7);
             items += `${name}${qty}${pr}${tot}\n`;
          });
-         items += "--------------------------------\n";
+         items += "********************************\n";
          // Right align subtotal/discount without decimals
          const subVal = Math.round(parseFloat(dataToPrint.sub.replace(/[^0-9.-]/g, '')));
          const disVal = Math.round(parseFloat(dataToPrint.dis.replace(/[^0-9.-]/g, '')));
@@ -1355,7 +1046,7 @@
          let totalLine = `${dataToPrint.tot.padStart(15)}\n`;
 
          // --- Part 4: Footer ---
-         let footer = "\nTHANK YOU!\nVisit Again\n\n\n\n";
+         let footer = "\nTHANK YOU!\nVisit Again\n\n||||||||||||||||||||||\n[ BARCODE HERE ]\n\n\n";
 
          // Build command buffer with all clarity enhancements
          const buffer1 = new Uint8Array([
